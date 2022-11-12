@@ -19,12 +19,14 @@ private:
 	inline void		ResetHeader();	// 헤더 초기화
 
 public:
-	BOOL			Receive(unsigned char* ppayload);			// CFileLayer에서 수신
-	BOOL			Send(unsigned char* ppayload, int nlength);	// CFileLayer으로 송신
-	void			SetDestinAddress(unsigned char* pAddress);	// 넘겨받은 source 주소를 Ethernet source주소로 지정
-	void			SetSourceAddress(unsigned char* pAddress);	// 넘겨받은 목적지 주소를 Ethernet destination 주소로 지정
-	unsigned char* GetDestinAddress();	// 헤더에 들어있는 도착주소를 반환한다.
-	unsigned char* GetSourceAddress();	// 헤더에 들어있는 시작주소를 반환한다.
+	unsigned char*			Receive();			// CFileLayer에서 수신
+	BOOL					Send(unsigned char* ppayload, int nlength, short frameType);
+	BOOL					Send(unsigned char* ppayload, int nlength, unsigned char* desMacAddr, short frameType);
+	void					SetDestinAddress(unsigned char* pAddress);	// 넘겨받은 source 주소를 Ethernet source주소로 지정
+	void					SetSourceAddress(unsigned char* pAddress);	// 넘겨받은 목적지 주소를 Ethernet destination 주소로 지정
+	unsigned char*			GetDestinAddress();	// 헤더에 들어있는 도착주소를 반환한다.
+	unsigned char*			GetSourceAddress();	// 헤더에 들어있는 시작주소를 반환한다.
+	void					SetEnetType(unsigned short enet_type);
 
 	CEthernetLayer(char* pName);	// 생성자
 	virtual ~CEthernetLayer();		// 소멸자

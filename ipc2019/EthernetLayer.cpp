@@ -63,9 +63,16 @@ void CEthernetLayer::SetDestinAddress(unsigned char* pAddress)
 	memcpy(m_sHeader.enet_dstaddr, pAddress, 6);
 }
 
-BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength)
+void CEthernetLayer::SetEnetType(unsigned short enet_type) 
+{
+	this->m_sHeader.enet_type = htons(enet_type);
+}
+
+
+BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength, short frameType)
 {
 	// ChatApp 계층에서 받은 App 계층의 Frame 길이만큼을 Ethernet계층의 data로 넣는다.
+	m_sHeader.enet_type = frameType;
 	memcpy(m_sHeader.enet_data, ppayload, nlength);
 
 	BOOL bSuccess = FALSE;
@@ -78,8 +85,21 @@ BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength)
 	return bSuccess;
 }
 
-BOOL CEthernetLayer::Receive(unsigned char* ppayload)
+BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength, unsigned char* desAddr, short frameType)
 {
+	m_sHeader.enet_type = frameType;
+	memcpy(m_sHeader.enet_dstaddr, desAddr, 6);
+	memcpy(m_sHeader.enet_data, ppayload, nlength);
+	BOOL bSuccess = FALSE;
+
+	bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader, nlength + ETHER_HEADER_SIZE);
+
+	return bSuccess;
+}
+
+unsigned char* CEthernetLayer::Receive()
+{
+	/*
 	PETHERNET_HEADER pFrame = (PETHERNET_HEADER)ppayload;
 
 	BOOL bSuccess = FALSE;
@@ -89,4 +109,30 @@ BOOL CEthernetLayer::Receive(unsigned char* ppayload)
 	///////////////////////////////////////////////////////////////////////
 
 	return bSuccess;
+	*/
+
+	unsigned char* ppayload = mp_UnderLayer->Receive();
+
+	unsigned char	ed[6];
+	unsigned char	es[6];
+	memset(ed, 0, 6);
+	memset(es, 0, 6);
+
+	if (ppayload != NULL) {
+		PETHERNET_HEADER pFrame = (PETHERNET_HEADER)ppayload;
+		unsigned char F = 255;// = 0xff(breadcast)
+		memcpy(ed, pFrame->enet_dstaddr, 6);
+		memcpy(es, pFrame->enet_srcaddr, 6);
+
+		int i, check = 0;
+		for (i = 0; i < 6; i++)  //Comapre packet's adress and My MacAdress
+			if ((ed[i] != m_sHeader.enet_srcaddr[i]) && (ed[i] != F || (es[i] == m_sHeader.enet_srcaddr[i]))) {//des and MacAdress comapre + des and F(broadcast) comapre + src and MacAdress comapre
+				check = 1;
+				break;
+			}
+		if (!check) {  //is sucess to comapre and go upper layer
+			return pFrame->enet_data;
+		}
+	}
+	return 0;
 }

@@ -12,7 +12,7 @@
 #include "BaseLayer.h"
 #include "LayerManager.h"
 #include "IPLayer.h"
-//#include "ARPLayer.h"
+#include "ARPLayer.h"
 #include "EthernetLayer.h"
 #include "NILayer.h"
 

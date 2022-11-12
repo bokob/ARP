@@ -54,7 +54,10 @@ public:
 public:
 	BOOL			Receive(unsigned char* ppayload);
 	inline void		SendData();		// ChatAppLayer로 메시지 전송
+	inline void		SendARP(unsigned char* destIP);
+	unsigned char*  MacAddrToHexInt(CString ether);
 	BOOL			ConvertHex(CString cs, unsigned char* hex);
+	void			SetAddresses();
 
 private:
 	CLayerManager	m_LayerMgr;
@@ -85,7 +88,7 @@ private:
 	// Object App
 	//CChatAppLayer* m_ChatApp;
 	CIPLayer* m_IP;
-	//ARPLayer* m_ARP;
+	CARPLayer* m_ARP;
 	CEthernetLayer* m_Ether;
 	CNILayer* m_NI;
 
@@ -115,9 +118,8 @@ public:
 	CIPAddressCtrl m_IPSrcAddr;
 //	CString m_IPDstAddr;
 	afx_msg void OnCbnSelchangeAdapter();
-	CIPAddressCtrl m_IPDstAddr;
-	CString m_stDstAddr;
 	afx_msg void OnBnClickedArpAllDeleteButton();
 	afx_msg void OnBnClickedArpItemDeleteButton();
 	afx_msg void OnBnClickedButtonSend();
+	CIPAddressCtrl m_IPDstAddr;
 };

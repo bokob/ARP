@@ -189,6 +189,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ARPLayer.h" />
     <ClInclude Include="BaseLayer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="ipc2019.h" />
@@ -203,6 +204,7 @@
     <ClInclude Include="EthernetLayer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ARPLayer.cpp" />
     <ClCompile Include="BaseLayer.cpp" />
     <ClCompile Include="EthernetLayer.cpp" />
     <ClCompile Include="ipc2019.cpp" />

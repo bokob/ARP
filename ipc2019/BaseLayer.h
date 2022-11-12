@@ -33,6 +33,7 @@ public:
 	virtual	BOOL			Send(unsigned char*, int) { return FALSE; }	// 다른 계층에서 전송
 	virtual	BOOL			Send(unsigned char*, int, unsigned char*) { return FALSE; }	// ARP 계층에서 전송
 	virtual	BOOL			Send(unsigned char*, int, short) { return FALSE; }	// Ethernet 계층에서 전송
+	virtual BOOL			Send(unsigned char*, int, unsigned char*, short) { return FALSE; } //Ethernet 계층에서 전송
 	virtual	BOOL			Send(unsigned char*) { return FALSE; }	// IP 계층에서 전송
 	// param : unsigned char*	- the data of the underlayer	
 	virtual	BOOL			Receive(unsigned char* ppayload) { return FALSE; }	// Dlg 계층에서 수신

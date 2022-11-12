@@ -136,7 +136,7 @@ BOOL CNILayer::Receive(unsigned char* ppayload) // 채팅 수신
 {
 	BOOL bSuccess = FALSE;
 
-	AfxMessageBox("수신");
+	//AfxMessageBox("수신");
 
 	// 상위 계층으로 ppayload 올림
 	bSuccess = mp_aUpperLayer[0]->Receive(ppayload);
@@ -171,9 +171,11 @@ UINT CNILayer::ReadingThread(LPVOID pParam)
 	return 0;
 }
 
+/*
 UINT CNILayer::FileTransferThread(LPVOID pParam)
 {
 	CNILayer* pNI = (CNILayer*)pParam;
 
 	return 0;
 }
+*/
