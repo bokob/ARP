@@ -2,48 +2,51 @@
 #include "stdafx.h"
 #include "ARPLayer.h"
 
-CARPLayer::CARPLayer()
-{
-}
-
-CARPLayer::CARPLayer(char* pName)
-	: CBaseLayer(pName)
+/*
+CARPLayer::CARPLayer()			// 생성자
 {
 	ResetHeader();
-
-
 	ARPTable.InitHashTable(23);
 }
+*/
 
-CARPLayer::~CARPLayer()
+CARPLayer::CARPLayer(char* pName)	// 생성자
+	: CBaseLayer(pName)
+{
+	ResetHeader();				// ARP 헤더 초기화
+	ARPTable.InitHashTable(23); //afxtempl.h에 들어있는 함수, 해시테이블을 만든다.
+}
+
+CARPLayer::~CARPLayer()	// 소멸자
 {
 }
 
-void CARPLayer::ResetHeader()
+void CARPLayer::ResetHeader()	// ARP 헤더 초기화
 {
 	m_arpBody.hardType = 0;
-	m_arpBody.protoType = 0;
+	m_arpBody.protType = 0;
 	m_arpBody.hardSize = 0;
-	m_arpBody.protoSize = 0;
-	m_arpBody.opCode = 0;
+	m_arpBody.protSize = 0;
+	m_arpBody.op = 0;
 	memset(m_arpBody.srcEthernetAddr, 0, 6);
 	memset(m_arpBody.srcIPAddr, 0, 4);
 	memset(m_arpBody.targetEthernetAddr, 0, 6);
 	memset(m_arpBody.targetIPAddr, 0, 4);
 }
 
-//src setting
-void CARPLayer::SetSourceAddress(unsigned char* pAddress)
+/*
+void CARPLayer::SetSourceAddress(unsigned char* pAddress) //src setting
 {
 	//memcpy(m_arpBody.enet_srcaddr, pAddress, 6);
 }
-//des setting
-void CARPLayer::SetDestinAddress(unsigned char* pAddress)
+
+void CARPLayer::SetDestinAddress(unsigned char* pAddress) //des setting
 {
 	//memcpy(m_arpBody.enet_dstaddr, pAddress, 6);
 }
+*/
 
-BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, unsigned char* pAddress)
+BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, unsigned char* pAddress) // Ethernet 계층으로 보내느 함수
 {
 	BOOL bSuccess = FALSE;
 	unsigned char* desMacAddr;
@@ -51,10 +54,10 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, unsigned char* pAddre
 	if ((desMacAddr = getMacAddressFromARPTable(pAddress)) == NULL || true)
 	{
 		m_arpBody.hardType = 0x0100;
-		m_arpBody.protoType = 0x0008;
+		m_arpBody.protType = 0x0008;
 		m_arpBody.hardSize = 6;
-		m_arpBody.protoSize = 4;
-		m_arpBody.opCode = 0x0100;
+		m_arpBody.protSize = 4;
+		m_arpBody.op = 0x0100;
 		memcpy(m_arpBody.srcEthernetAddr, ((CEthernetLayer*)mp_UnderLayer)->GetSourceAddress(), 6);
 		memcpy(m_arpBody.srcIPAddr, ((CIPLayer*)mp_aUpperLayer[0])->GetSourceAddress(), 4);
 		memcpy(m_arpBody.targetIPAddr, pAddress, 4);
@@ -88,12 +91,12 @@ unsigned char* CARPLayer::Receive()
 
 		setARPElement(recivedARP->srcIPAddr, recivedARP->srcEthernetAddr);
 
-		switch (recivedARP->opCode)
+		switch (recivedARP->op)
 		{
 		case ARP_REQUEST:
 			if (!strncmp(recivedARP->targetIPAddr, m_arpBody.srcIPAddr, 4))
 			{
-				recivedARP->opCode = 0x0200;
+				recivedARP->op = 0x0200;
 				memcpy(recivedARP->targetEthernetAddr, recivedARP->srcEthernetAddr, 6);
 				memcpy(recivedARP->srcEthernetAddr, m_arpBody.srcEthernetAddr, 6);
 				memcpy(recivedARP->targetIPAddr, recivedARP->srcIPAddr, 4);
@@ -108,7 +111,7 @@ unsigned char* CARPLayer::Receive()
 
 				if (ProxyTable.Lookup(ip, *_element))		// proxy arp reply
 				{
-					recivedARP->opCode = 0x0200;
+					recivedARP->op = 0x0200;
 					memcpy(recivedARP->targetEthernetAddr, recivedARP->srcEthernetAddr, 6);
 					memcpy(recivedARP->srcEthernetAddr, m_arpBody.srcEthernetAddr, 6);
 					memcpy(recivedARP->targetIPAddr, recivedARP->srcIPAddr, 4);
@@ -122,18 +125,19 @@ unsigned char* CARPLayer::Receive()
 	return 0;
 }
 
-unsigned char* CARPLayer::getMacAddressFromARPTable(unsigned char* pAddress)
+unsigned char* CARPLayer::getMacAddressFromARPTable(unsigned char* pAddress)	// ARP Table에서 Mac주소 가져오는 함수
 {
+	// 초기화
 	ARPElement* _element = new(ARPElement);
 	memset(_element, 0, sizeof(ARPElement));
 
 	int ip;
 	memcpy(&ip, pAddress, 4);
 
-	ARPTable.Lookup(ip, *_element);
+	ARPTable.Lookup(ip, *_element);	// Lookup 함수는 키값이 할당 되엉있는지 찾는 함수다. ip가 존재하면 _element가 그 값을 가리키게 한다.
 
-	if (_element->MACAddr != NULL)
-	{
+	if (_element->MACAddr != NULL)	// _element가 무엇인가 가리킨다면 -> ip가 있는 경우
+	{// GetTickCount 함수는 시간 측정하는 함수
 		if (GetTickCount() - _element->tick < 1200000 && _element->state == ARP_COMPLETE)		// 20min to time out for complete
 			return _element->MACAddr;
 		else

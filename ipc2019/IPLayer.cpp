@@ -49,7 +49,7 @@ void CIPLayer::SetSourceAddress(unsigned char* pAddress)
 	memcpy(m_sHeader.ip_srcaddr, pAddress, 4);
 }
 
-void CIPLayer::SetDestinAddress(unsigned char* pAddress) // 넘겨받은 목적지 주소를 Ethernet destination주소로 지정
+void CIPLayer::SetDestinAddress(unsigned char* pAddress) // 넘겨받은 목적지 주소를 IP destination주소로 지정
 {
 	memcpy(m_sHeader.ip_dstaddr, pAddress, 4);
 }

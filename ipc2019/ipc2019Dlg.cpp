@@ -405,8 +405,8 @@ void Cipc2019Dlg::SetDlgState(int state)	// 영역별 들어갈 내용
 
 		//m_MacSrcAddr = "";
 		m_Adapter.EnableWindow(true);
-		m_Ether->SetSourceAddress((unsigned char*)"00000000");
-		m_Ether->SetDestinAddress((unsigned char*)"00000000");
+		//m_Ether->SetSourceAddress((unsigned char*)"00000000");
+		//m_Ether->SetDestinAddress((unsigned char*)"00000000");
 		break;
 	}
 
@@ -456,45 +456,13 @@ void Cipc2019Dlg::OnTimer(UINT nIDEvent)	// 타이머
 	CDialog::OnTimer(nIDEvent);
 }
 
-/*
-void Cipc2019Dlg::SetAddresses() // 입력된 주소로 IP 헤더 설정
+
+void Cipc2019Dlg::SetAddresses() // 입력된 목적지 IP 주소
 {
-	// 맥주소, IP 주소 설정
-	BYTE src_ip[4];
-	unsigned char srcMac[12];
-
-	// 입력된 값으로 주소 설정
-	int index = m_Adapter.GetCurSel();
-
-	PPACKET_OID_DATA OidData = (PPACKET_OID_DATA)malloc(sizeof(PACKET_OID_DATA));
-	OidData->Oid = 0x01010101;
-	OidData->Length = 6;
-
-	LPADAPTER adapter = PacketOpenAdapter(m_NI->GetAdapterObject(index)->name);
-	PacketRequest(adapter, FALSE, OidData);
-
-	srcMac[0] = OidData->Data[0];
-	srcMac[1] = OidData->Data[1];
-	srcMac[2] = OidData->Data[2];
-	srcMac[3] = OidData->Data[3];
-	srcMac[4] = OidData->Data[4];
-	srcMac[5] = OidData->Data[5];
-
-	m_Ether->SetSourceAddress(srcMac);
-
-	m_IPSrcAddr.GetAddress(src_ip[0], src_ip[1], src_ip[2], src_ip[3]); // Source IP 주소
-
-	// arp 헤더 주소 설정
-	m_ARP->setSrcIPAddress(src_ip);
-	m_ARP->setSrcMacAddress(srcMac);
-
-	m_ARP->setMyIPAddress(src_ip);
-	m_ARP->setMyMacAddress(srcMac);
-
-
-	m_IP->SetSourceAddress(src_ip);
+	unsigned char DstIP[4];
+	m_IPDstAddr.GetAddress(DstIP[0], DstIP[1], DstIP[2], DstIP[3]);	// DstIP에 목적지 IP 주소를 담는다.
+	m_IP->SetDestinAddress(DstIP);
 }
-*/
 
 void Cipc2019Dlg::OnBnClickedButtonAddr()	// 설정 버튼 눌렀을 때 일어나는 이벤트
 {
@@ -504,8 +472,8 @@ void Cipc2019Dlg::OnBnClickedButtonAddr()	// 설정 버튼 눌렀을 때 일어�
 		m_bSendReady = TRUE;
 		SetDlgState(IPC_ADDR_SET);
 
-		// Source Mac ㅈ소 설정
-		unsigned char* eth_temp = MacAddrToHexInt(m_unSrcAddr);	
+		// Source Mac 주소 설정
+		unsigned char* eth_temp = MacAddrToHexInt(m_MacSrcAddr);	
 		ETHERNET_ADDR srcaddr;
 		srcaddr.addr0 = eth_temp[0];
 		srcaddr.addr1 = eth_temp[1];
@@ -516,7 +484,7 @@ void Cipc2019Dlg::OnBnClickedButtonAddr()	// 설정 버튼 눌렀을 때 일어�
 		m_Ether->SetSourceAddress(srcaddr.addrs);
 
 		// Destination Mac 주소 설정
-		CString m_stDstAdd = "FFFFFFFFFFFF";
+		CString m_stDstAdd = "FF:FF:FF:FF:FF:FF";
 		unsigned char* eth_temp2 = MacAddrToHexInt(m_stDstAdd);	
 		ETHERNET_ADDR dstaddr;
 		dstaddr.addr0 = eth_temp2[0];
@@ -529,9 +497,7 @@ void Cipc2019Dlg::OnBnClickedButtonAddr()	// 설정 버튼 눌렀을 때 일어�
 
 		// 내가 입력한 Source IP 주소 설정
 		unsigned char SrcIP[4];
-		m_IPSrcAddr.GetAddress(SrcIP[0], SrcIP[1], SrcIP[2], SrcIP[3]);
-		m_IP->SetSourceAddress(SrcIP);
-
+		m_IPSrcAddr.GetAddress(SrcIP[0], SrcIP[1], SrcIP[2], SrcIP[3]);	// SrcIP에 출발 IP 주소를 담는다.
 		m_IP->SetSourceAddress(SrcIP);
 		
 		m_NI->SetAdapterNumber(m_Adapter.GetCurSel());
@@ -645,8 +611,10 @@ void Cipc2019Dlg::OnCbnSelchangeAdapter() // 어댑터 설정하면 Source Mac, 
 	// 어댑터 이름으로 Mac주소 가져오기
 	m_MacSrcAddr = m_NI->GetNICardAddress((char*)nicName.GetString());
 
+	/*
 	BYTE srcIP[4];
 	m_IPSrcAddr.GetAddress(srcIP[0], srcIP[1], srcIP[2], srcIP[3]);
+	*/
 
 	UpdateData(FALSE);
 }
@@ -670,7 +638,7 @@ void Cipc2019Dlg::OnBnClickedArpItemDeleteButton()
 }
 
 
-void Cipc2019Dlg::OnBnClickedButtonSend()
+void Cipc2019Dlg::OnBnClickedButtonSend()	// send 버튼 눌렀을 때
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 
@@ -692,8 +660,9 @@ void Cipc2019Dlg::OnBnClickedButtonSend()
 		m_ARPListView.InsertItem(row, szIPAddr);	// 행 추가
 		m_ARPListView.SetItemText(row, 1, _T("00:00:00:00:00:00"));	// 1열에 목적지의 Mac주소 모르니까 초기화
 		m_ARPListView.SetItemText(row, 2, _T("incomplete"));
-
 		// ARP Table에 추가 종료
+
+		SetAddresses();	// 입력받은 목적지 IP 주소 넣는다.
 		unsigned char* destIP = (unsigned char*)szIPAddr;
 		SendARP(destIP);
 	}
