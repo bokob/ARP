@@ -97,20 +97,75 @@ BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength, unsigned char* d
 	return bSuccess;
 }
 
-unsigned char* CEthernetLayer::Receive()
+BOOL CEthernetLayer::Receive(unsigned char* ppayload)
 {
+	BOOL bSuccess = FALSE;
+	unsigned char	ed[6];
+	unsigned char	es[6];
+	memset(ed, 0, 6);
+	memset(es, 0, 6);
+
+	if (ppayload != NULL) {
+		PETHERNET_HEADER pFrame = (PETHERNET_HEADER)ppayload;
+		unsigned char F = 255;// = 0xff(breadcast)
+		memcpy(ed, pFrame->enet_dstaddr, 6);
+		memcpy(es, pFrame->enet_srcaddr, 6);
+
+		bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->enet_data);
+		return bSuccess;
+	}
+	return 0;
+
+
 	/*
 	PETHERNET_HEADER pFrame = (PETHERNET_HEADER)ppayload;
-
 	BOOL bSuccess = FALSE;
-	//////////////////////// fill the blank ///////////////////////////////
-		// ChatApp 계층으로 Ethernet Frame의 data를 넘겨준다.
-	bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->enet_data);
-	///////////////////////////////////////////////////////////////////////
+	bool isOK = false;		// 수신허가 여부를 위한 변수
+	int i = 0;
 
-	return bSuccess;
+	pFrame->enet_type = ntohs(pFrame->enet_type);	// 수신 시에 바이트 오더링 해서 수신
+
+	for (i = 0; i < 6; i++)
+		if (pFrame->enet_dstaddr[i] != m_sHeader.enet_srcaddr[i])
+			break;
+	if (i == 6)
+		isOK = true;
+
+
+	for (i = 0; i < 6; i++)
+		if (pFrame->enet_srcaddr[i] != m_sHeader.enet_srcaddr[i])
+			break;
+	if (i != 6)
+	{
+		for (i = 0; i < 6; i++)
+			if (pFrame->enet_dstaddr[i] != 0xff)
+				break;
+		if (i == 6)
+			isOK = true;
+	}
+
+	// 수신 허가시 상위계층으로 데이터 전달
+	if (isOK)
+	{
+		// enet_type: 0x0800 => IP로 전달,  0x0806 => ARP로 전달
+		if (pFrame->enet_type == 0x0800)
+		{
+			bSuccess = mp_aUpperLayer[1]->Receive((unsigned char*)pFrame->enet_data);
+			return bSuccess;
+		}
+		else if (pFrame->enet_type == 0x0806)
+		{
+			bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->enet_data);
+			return bSuccess;
+		}
+	}
+
+	return FALSE;
 	*/
+	
 
+
+	/*
 	unsigned char* ppayload = mp_UnderLayer->Receive();
 
 	unsigned char	ed[6];
@@ -135,4 +190,5 @@ unsigned char* CEthernetLayer::Receive()
 		}
 	}
 	return 0;
+	*/
 }

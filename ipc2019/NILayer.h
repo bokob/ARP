@@ -30,9 +30,9 @@ public:
 	void			SetAdapterList(LPADAPTER* plist);
 	CString			GetNICardAddress(char* adapter_name);
 	static UINT		ReadingThread(LPVOID pParam);
-	static UINT		FileTransferThread(LPVOID pParam);
+	//static UINT		FileTransferThread(LPVOID pParam);
 
-	BOOL			Receive(unsigned char* ppayload);
+	BOOL			Receive();		// 패킷 수신
 	BOOL			Send(unsigned char* ppayload, int nlength);
 
 	CNILayer(char* pName, LPADAPTER* pAdapterObject = NULL, int iNumAdapter = 0);

@@ -37,7 +37,7 @@ public:
 	virtual	BOOL			Send(unsigned char*) { return FALSE; }	// IP 계층에서 전송
 	// param : unsigned char*	- the data of the underlayer	
 	virtual	BOOL			Receive(unsigned char* ppayload) { return FALSE; }	// Dlg 계층에서 수신
-	virtual	unsigned char*	Receive() { return FALSE; }	// 다른 계층에서 수신
+	virtual	BOOL			Receive() { return FALSE; }	// 다른 계층에서 수신
 
 protected:
 	char*			m_pLayerName;							// 계층 이름

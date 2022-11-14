@@ -19,7 +19,7 @@ private:
 	inline void		ResetHeader();	// 헤더 초기화
 
 public:
-	unsigned char*			Receive();			// CFileLayer에서 수신
+	BOOL					Receive(unsigned char* ppayload);			// NI 계층에서 수신
 	BOOL					Send(unsigned char* ppayload, int nlength, short frameType);
 	BOOL					Send(unsigned char* ppayload, int nlength, unsigned char* desMacAddr, short frameType);
 	void					SetDestinAddress(unsigned char* pAddress);	// 넘겨받은 source 주소를 Ethernet source주소로 지정

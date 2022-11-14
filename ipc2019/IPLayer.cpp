@@ -76,11 +76,39 @@ BOOL CIPLayer::Send(unsigned char* IPaddr)
 	return bSuccess;
 }
 
-unsigned char* CIPLayer::Receive()
+BOOL CIPLayer::Receive(unsigned char* ppayload)
 {
-	unsigned char* ppayload = mp_UnderLayer->Receive();
-
 	PIP_HEADER pFrame = (PIP_HEADER)ppayload;
+	BOOL bSuccess = FALSE;
+	bool isOK = false;		// 수신허가 여부를 위한 변수
+	int i = 0;
 
-	return pFrame->ip_data;
+	for (i = 0; i < 4; i++)
+		if (pFrame->ip_dstaddr[i] != m_sHeader.ip_srcaddr[i])
+			break;
+	if (i == 4)
+		isOK = true;
+
+
+	for (i = 0; i < 4; i++)
+		if (pFrame->ip_srcaddr[i] != m_sHeader.ip_srcaddr[i])
+			break;
+	if (i != 4) {
+		for (i = 0; i < 4; i++)
+			if (pFrame->ip_dstaddr[i] != 255)
+				break;
+		if (i == 4)
+			isOK = true;
+	}
+	// 수신 허가시 상위계층으로 데이터 전달
+	if (isOK)
+	{
+		bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->ip_data);
+		if (bSuccess == FALSE)
+			::AfxMessageBox("Error while Receiving something.");
+		return bSuccess;
+	}
+
+	else
+		return FALSE;
 }

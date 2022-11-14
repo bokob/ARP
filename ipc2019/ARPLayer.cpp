@@ -34,17 +34,43 @@ void CARPLayer::ResetHeader()	// ARP 헤더 초기화
 	memset(m_arpBody.targetIPAddr, 0, 4);
 }
 
-/*
-void CARPLayer::SetSourceAddress(unsigned char* pAddress) //src setting
+void CARPLayer::SetDestinEtherAddress(unsigned char* pAddress) //  목적지 Ethernet 주소 설정
 {
-	//memcpy(m_arpBody.enet_srcaddr, pAddress, 6);
+	memcpy(m_arpBody.targetEthernetAddr, pAddress, 6);
 }
 
-void CARPLayer::SetDestinAddress(unsigned char* pAddress) //des setting
+void CARPLayer::SetSourceEtherAddress(unsigned char* pAddress) // 출발 Ethernet 주소 설정
 {
-	//memcpy(m_arpBody.enet_dstaddr, pAddress, 6);
+	memcpy(m_arpBody.srcEthernetAddr, pAddress, 6);
 }
-*/
+
+void CARPLayer::SetDestinIPAddress(unsigned char* pAddress) // 목적지 IP 주소 설정
+{
+	memcpy(m_arpBody.targetIPAddr, pAddress, 4);
+}
+
+void CARPLayer::SetSourceIPAddress(unsigned char* pAddress) // 출발 IP 주소 설정
+{
+	memcpy(m_arpBody.srcIPAddr, pAddress, 4);
+}
+
+char* CARPLayer::GetSourceEtherAddress()
+{
+	return m_arpBody.srcEthernetAddr;
+}
+char* CARPLayer::GetSourceIPAddress()
+{
+	return m_arpBody.srcIPAddr;
+}
+char* CARPLayer::GetDestinEtherAddress()
+{
+	return m_arpBody.targetEthernetAddr;
+}
+char* CARPLayer::GetDestinIPAddress()
+{
+	return m_arpBody.targetIPAddr;
+}
+
 
 BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, unsigned char* pAddress) // Ethernet 계층으로 보내느 함수
 {
@@ -78,10 +104,8 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, unsigned char* pAddre
 	return bSuccess;
 }
 
-unsigned char* CARPLayer::Receive()
+BOOL CARPLayer::Receive(unsigned char* ppayload)
 {
-	unsigned char* ppayload = mp_UnderLayer->Receive();
-
 	ARP_BODY* recivedARP = (ARP_BODY*)ppayload;
 
 	memcpy(m_arpBody.srcEthernetAddr, ((CEthernetLayer*)mp_UnderLayer)->GetSourceAddress(), 6);

@@ -185,10 +185,12 @@ BOOL Cipc2019Dlg::OnInitDialog()	// 로그인 다이얼로그 생성
 	int i;
 	CString device_description;
 
-	for (i = 0; i < NI_COUNT_NIC; i++) {
+	for (i = 0; i < NI_COUNT_NIC; i++) 
+	{
 		if (!m_NI->GetAdapterObject(i))
 			break;
-		else {
+		else 
+		{
 			device_description = m_NI->GetAdapterObject(i)->description;
 			device_description.Trim();
 			p_EtherComboBox->AddString(device_description);
@@ -266,30 +268,6 @@ HCURSOR Cipc2019Dlg::OnQueryDragIcon()
 }
 
 
-
-
-//void Cipc2019Dlg::OnBnClickedButtonSend()	// send 버튼 눌렀을 때 일어나는 이벤트(전송)
-//{
-//	UpdateData(TRUE);
-//
-//	if (!m_stDstAddr.IsEmpty())
-//	{
-//		/*
-//		SetTimer(1, 2000, NULL);
-//		m_nAckReady = 0;
-//		*/
-//
-//		unsigned char IP[4];
-//		m_IPDstAddr.GetAddress(IP[0], IP[1], IP[2], IP[3]);
-//		m_stDstAddr = "";
-		//m_stMessage = "";
-
-//		(CEdit*)GetDlgItem(IDC_EDIT_DST_IP_ADDR)->SetFocus();
-//	}
-//
-//	UpdateData(FALSE);
-//}
-
 void Cipc2019Dlg::SetRegstryMessage()
 {
 	nRegSendMsg = RegisterWindowMessage(_T("Send IPC Message"));
@@ -303,38 +281,6 @@ void Cipc2019Dlg::SendARP(unsigned char* destIP)
 		mp_UnderLayer->Send(destIP);
 }
 
-void Cipc2019Dlg::SendData()	// ChatAppLayer로 메시지 전송
-{
-	CString MsgHeader;
-	/*
-	if (m_unDstAddr == (unsigned int)0xff)
-		MsgHeader.Format(_T("[%d:BROADCAST] "), m_unSrcAddr);
-	else
-		MsgHeader.Format(_T("[%d:%d] "), m_unSrcAddr, m_unDstAddr);
-
-	m_ListChat.AddString(MsgHeader + m_stMessage);
-	*/
-	/*
-	int nlength = m_stMessage.GetLength();
-	unsigned char* ppayload = new unsigned char[nlength + 1];
-	memcpy(ppayload, (unsigned char*)(LPCTSTR)m_stMessage, nlength);
-	ppayload[nlength] = '\0';
-	*/
-
-	// 보낼 data와 메시지 길이를 Send함수로 넘겨준다.
-	//m_ChatApp->Send(ppayload, nlength);
-}
-
-
-BOOL Cipc2019Dlg::Receive(unsigned char* ppayload) // ChatAppLayer로부터 메시지 수신
-{
-	if (m_nAckReady == -1)
-	{
-	}
-
-	//m_ListChat.AddString((LPCTSTR)ppayload);
-	return TRUE;
-}
 
 BOOL Cipc2019Dlg::PreTranslateMessage(MSG* pMsg)
 {
@@ -456,14 +402,6 @@ void Cipc2019Dlg::OnTimer(UINT nIDEvent)	// 타이머
 	CDialog::OnTimer(nIDEvent);
 }
 
-
-void Cipc2019Dlg::SetAddresses() // 입력된 목적지 IP 주소
-{
-	unsigned char DstIP[4];
-	m_IPDstAddr.GetAddress(DstIP[0], DstIP[1], DstIP[2], DstIP[3]);	// DstIP에 목적지 IP 주소를 담는다.
-	m_IP->SetDestinAddress(DstIP);
-}
-
 void Cipc2019Dlg::OnBnClickedButtonAddr()	// 설정 버튼 눌렀을 때 일어나는 이벤트
 {
 	UpdateData(TRUE);
@@ -502,14 +440,19 @@ void Cipc2019Dlg::OnBnClickedButtonAddr()	// 설정 버튼 눌렀을 때 일어�
 		
 		m_NI->SetAdapterNumber(m_Adapter.GetCurSel());
 		m_NI->PacketStartDriver();
+
+		// 설정 눌렀을 때, 모든 출발 주소가 설정된 후 쓰레드 시작
+		m_RecvThread = AfxBeginThread(ReceiveThread, (LPVOID)m_NI);
 	}
 	else 
 	{
+		// 재설정을 하면 연결이 끊어진다. 그러므로 쓰레드 종료
+		TerminateThread(m_RecvThread->m_hThread, 0);
+
 		m_bSendReady = FALSE;
 		SetDlgState(IPC_ADDR_RESET);
 		SetDlgState(IPC_INITIALIZING);
 	}
-
 	UpdateData(FALSE);
 }
 
@@ -555,6 +498,7 @@ unsigned char* Cipc2019Dlg::MacAddrToHexInt(CString ether)
 	return file_ether;
 }
 
+/*
 BOOL Cipc2019Dlg::ConvertHex(CString cs, unsigned char* hex) // 문자열을 Hex로 바꾸는 함수
 {
 	int i;
@@ -573,25 +517,7 @@ BOOL Cipc2019Dlg::ConvertHex(CString cs, unsigned char* hex) // 문자열을 Hex
 	}
 	return TRUE;
 }
-
-BOOL Cipc2019Dlg::ConvertStringToIP(CString cs, unsigned char* IP)
-{
-	int j = 0;
-	LPCSTR IPstring = cs.GetString();
-	memset(IP, 0, 4);
-
-	for (int i = 0; i < 4; i++)
-	{
-		while (IPstring[j] != NULL && IPstring[j] != '.')
-		{
-			IP[i] *= 10;
-			IP[i] += IPstring[j] - '0';
-			j++;
-		}
-		j++;
-	}
-	return true;
-}
+*/
 
 
 void Cipc2019Dlg::OnCbnSelchangeAdapter() // 어댑터 설정하면 Source Mac, IP 주소 세팅
@@ -608,7 +534,7 @@ void Cipc2019Dlg::OnCbnSelchangeAdapter() // 어댑터 설정하면 Source Mac, 
 	// 가져온 인덱스 번호로 Adapter 이름 가져오기
 	CString nicName = m_NI->GetAdapterObject(cIndex)->name;
 
-	// 어댑터 이름으로 Mac주소 가져오기
+	// 어댑터 이름으로 mfc에서 mac 주소 나오는 곳에 Mac주소 넣기
 	m_MacSrcAddr = m_NI->GetNICardAddress((char*)nicName.GetString());
 
 	/*
@@ -620,14 +546,14 @@ void Cipc2019Dlg::OnCbnSelchangeAdapter() // 어댑터 설정하면 Source Mac, 
 }
 
 
-void Cipc2019Dlg::OnBnClickedArpAllDeleteButton()
+void Cipc2019Dlg::OnBnClickedArpAllDeleteButton()	// ARP 테이블의 모든 행 삭제
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	m_ARPListView.DeleteAllItems();
 }
 
 
-void Cipc2019Dlg::OnBnClickedArpItemDeleteButton()
+void Cipc2019Dlg::OnBnClickedArpItemDeleteButton()	// ARP 테이블이 선택한 한 행 삭제
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	POSITION pos;
@@ -638,7 +564,7 @@ void Cipc2019Dlg::OnBnClickedArpItemDeleteButton()
 }
 
 
-void Cipc2019Dlg::OnBnClickedButtonSend()	// send 버튼 눌렀을 때
+void Cipc2019Dlg::OnBnClickedButtonSend()	// 목적지 IP 주소 입력하는 곳 옆 send 버튼 눌렀을 때
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 
@@ -655,21 +581,72 @@ void Cipc2019Dlg::OnBnClickedButtonSend()	// send 버튼 눌렀을 때
 		BYTE ipFirst, ipSecond, ipThird, ipForth;
 		m_IPDstAddr.GetAddress(ipFirst, ipSecond, ipThird, ipForth);	// 목적지 ip 주소를 각 변수에 나눠서 저장한다.
 		char szIPAddr[30];
-		::wsprintf(szIPAddr, "%d.%d.%d.%d", ipFirst, ipSecond, ipThird, ipForth);
 
+		// CIPAddressCtrl을 문자열로 바꾼 후 ARP 테이블에 추가한다.
+		::wsprintf(szIPAddr, "%d.%d.%d.%d", ipFirst, ipSecond, ipThird, ipForth);
 		m_ARPListView.InsertItem(row, szIPAddr);	// 행 추가
 		m_ARPListView.SetItemText(row, 1, _T("00:00:00:00:00:00"));	// 1열에 목적지의 Mac주소 모르니까 초기화
 		m_ARPListView.SetItemText(row, 2, _T("incomplete"));
-		// ARP Table에 추가 종료
+		
+		// 사용자가 입력한 목적지 IP 주소를 세팅한다.
+		unsigned char DstIP[4];
+		m_IPDstAddr.GetAddress(DstIP[0], DstIP[1], DstIP[2], DstIP[3]);	// DstIP에 목적지 IP 주소를 담는다.
+		m_IP->SetDestinAddress(DstIP);
+		//m_ARP->SetDestinProtoAddress((unsigned char*)ip_dstAddr);
 
-		SetAddresses();	// 입력받은 목적지 IP 주소 넣는다.
 		unsigned char* destIP = (unsigned char*)szIPAddr;
 		SendARP(destIP);
 	}
 	else
 	{
-		AfxMessageBox(" 아무것도 없음 다시 확인하셈 ");
+		AfxMessageBox(" 목적지 IP 주소 입력 안됨. 다시 확인하셈 ");
 	}
 
 	UpdateData(FALSE);
 }
+
+UINT Cipc2019Dlg::ReceiveThread(LPVOID pParam)	// 패킷 수신을 위한 스레드 함수
+{
+	((CNILayer*)pParam)->Receive();	// 쓰레드를 이용해 NILayer의 Receive 함수를 호출
+
+	return 0;
+}
+
+/*
+// ARP 스레드
+UINT Cipc2019Dlg::SendIPThread(LPVOID pParam)
+{
+
+	Cipc2019Dlg* dlg = (Cipc2019Dlg*)pParam;
+
+	if (dlg->m_IPDstAddr.IsBlank())
+	{
+		AfxMessageBox("IP Address is NOT inputed.");
+		return 0;
+	}
+
+	unsigned char temp_IPAddr[4];
+	dlg->m_IPDstAddr.GetAddress(temp_IPAddr[0], temp_IPAddr[1], temp_IPAddr[2], temp_IPAddr[3]);
+
+	unsigned char temp_targetIP[4];
+	memcpy(temp_targetIP, dlg->m_ARP->GetDestinIPAddress(), 4);
+
+	dlg->m_ARP->SetDestinIPAddress(temp_IPAddr);
+
+	dlg->EnableWindow(false);
+
+	if (dlg->m_ARP->Send(NULL, 0, NULL) == FALSE)
+		AfxMessageBox("IP 주소 없음.");
+	else
+		AfxMessageBox("IP 주소를 찾았음.");
+
+	dlg->EnableWindow(true);
+
+	dlg->m_ARP->SetDestinIPAddress(temp_targetIP);
+
+	dlg->m_IPDstAddr.ClearAddress();
+	dlg->Invalidate();
+
+	return 0;
+}
+*/

@@ -37,7 +37,7 @@ void CNILayer::PacketStartDriver()
 		AfxMessageBox(errbuf);
 		return;
 	}
-	AfxBeginThread(ReadingThread, this);
+	//AfxBeginThread(ReadingThread, this);
 }
 
 void CNILayer::PacketEndDriver()
@@ -121,7 +121,7 @@ CString CNILayer::GetNICardAddress(char* adapter_name)
 	return NICardAddress;
 }
 
-BOOL CNILayer::Send(unsigned char* ppayload, int nlength)
+BOOL CNILayer::Send(unsigned char* ppayload, int nlength) // 패킷 전송
 {
 	if (pcap_sendpacket(m_AdapterObject, ppayload, nlength))
 	{
@@ -132,17 +132,34 @@ BOOL CNILayer::Send(unsigned char* ppayload, int nlength)
 	return TRUE;
 }
 
-BOOL CNILayer::Receive(unsigned char* ppayload) // 채팅 수신
+
+BOOL CNILayer::Receive()
 {
-	BOOL bSuccess = FALSE;
+	int result;
+	struct pcap_pkthdr* header;
+	const unsigned char* pkt_data;
+	unsigned char* data = (unsigned char*)malloc(sizeof(unsigned char) * ETHER_MAX_SIZE);
 
-	//AfxMessageBox("수신");
+	//make packet's memory
+	memset(data, '\0', ETHER_MAX_SIZE);
 
-	// 상위 계층으로 ppayload 올림
-	bSuccess = mp_aUpperLayer[0]->Receive(ppayload);
-	return bSuccess;
+	//pcap_next_ex(receive packet)
+	while ((result = pcap_next_ex(m_AdapterObject, &header, &pkt_data)) >= 0) 
+	{
+		if (result == 0)
+			continue;
+
+		memcpy(data, pkt_data, ETHER_MAX_SIZE);//copy packet
+		mp_aUpperLayer[0]->Receive(data);						// 패킷 상위 12비트 (목적지 mac주소, 출발 mac주소)가 제거된 데이터 전달
+	}
+
+	if (result = -1)   // 오류
+		return FALSE;
+	else
+		return TRUE;
 }
 
+/*
 UINT CNILayer::ReadingThread(LPVOID pParam)
 {
 	struct pcap_pkthdr* header;
@@ -170,6 +187,7 @@ UINT CNILayer::ReadingThread(LPVOID pParam)
 
 	return 0;
 }
+*/
 
 /*
 UINT CNILayer::FileTransferThread(LPVOID pParam)

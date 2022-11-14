@@ -52,12 +52,11 @@ public:
 
 
 public:
-	BOOL			Receive(unsigned char* ppayload);
-	inline void		SendData();		// ChatAppLayer로 메시지 전송
+	//BOOL			Receive(unsigned char* ppayload);
+	//inline void		SendData();		// ChatAppLayer로 메시지 전송
 	inline void		SendARP(unsigned char* destIP);
 	unsigned char*  MacAddrToHexInt(CString ether);
 	BOOL			ConvertHex(CString cs, unsigned char* hex);
-	void			SetAddresses();
 
 private:
 	CLayerManager	m_LayerMgr;
@@ -97,10 +96,10 @@ private:
 	DWORD			m_lParam;
 
 	CWinThread* m_RecvThread;
-	static UINT	ReceiveThread(LPVOID pParam);
+	static UINT	ReceiveThread(LPVOID pParam);		// 패킷 수신을 위한 스레드 함수
+	static UINT SendIPThread(LPVOID pParam);		// IP주소지로 연결 호스트 검색시 프로그램이 잠드는것을 막기 위한 스레드
 
 public:
-	BOOL ConvertStringToIP(CString cs, unsigned char* IP);
 	afx_msg void OnBnClickedButtonAddr();	// 설정 버튼 눌렀을 때 일어나는 이벤트
 //	afx_msg void OnBnClickedButtonSend();	// send 버튼 눌렀을 때 일어나는 이벤트
 //	UINT m_unSrcAddr;

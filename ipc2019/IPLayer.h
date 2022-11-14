@@ -15,7 +15,7 @@ class CIPLayer
 private:
 	inline void		ResetHeader();	// 헤더 초기화
 public:
-	unsigned char*	Receive(); // 수신
+	BOOL			Receive(unsigned char* ppayload); // 수신
 	int				Send(unsigned char* ppayload, int nlength);
 	int				Send(unsigned char* IPaddr);
 	void			SetDestinAddress(unsigned char* pAddress);
@@ -28,8 +28,8 @@ public:
 
 	typedef struct _IP_HEADER {
 
-		unsigned char	ip_dstaddr[6];			   // destination address of ethernet layer
-		unsigned char	ip_srcaddr[6];			   // source address of ethernet layer
+		unsigned char	ip_dstaddr[4];			   // destination address of ethernet layer
+		unsigned char	ip_srcaddr[4];			   // source address of ethernet layer
 		unsigned short	ip_type;				   // type of ethernet layer
 		unsigned char	ip_data[IP_MAX_DATA_SIZE]; // frame data
 
