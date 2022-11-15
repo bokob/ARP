@@ -69,23 +69,19 @@ void CEthernetLayer::SetEnetType(unsigned short enet_type)
 }
 
 
-BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength, short frameType)
+BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength, short frameType) // Ethernet에서 보통의 경우에 쓰이는 전송 함수
 {
-	// ChatApp 계층에서 받은 App 계층의 Frame 길이만큼을 Ethernet계층의 data로 넣는다.
 	m_sHeader.enet_type = frameType;
 	memcpy(m_sHeader.enet_data, ppayload, nlength);
 
 	BOOL bSuccess = FALSE;
 	//////////////////////// fill the blank ///////////////////////////////
-
-		// Ethernet Data + Ethernet Header의 사이즈를 합한 크기만큼의 Ethernet Frame을
-		// File 계층으로 보낸다.
 	bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader, nlength + ETHER_HEADER_SIZE);
 	///////////////////////////////////////////////////////////////////////
 	return bSuccess;
 }
 
-BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength, unsigned char* desAddr, short frameType)
+BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength, unsigned char* desAddr, short frameType) // ARP Reply때 쓰임
 {
 	m_sHeader.enet_type = frameType;
 	memcpy(m_sHeader.enet_dstaddr, desAddr, 6);
@@ -97,6 +93,7 @@ BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength, unsigned char* d
 	return bSuccess;
 }
 
+
 BOOL CEthernetLayer::Receive(unsigned char* ppayload)
 {
 	BOOL bSuccess = FALSE;
@@ -105,13 +102,15 @@ BOOL CEthernetLayer::Receive(unsigned char* ppayload)
 	memset(ed, 0, 6);
 	memset(es, 0, 6);
 
-	if (ppayload != NULL) {
+	if (ppayload != NULL) 
+	{
 		PETHERNET_HEADER pFrame = (PETHERNET_HEADER)ppayload;
 		unsigned char F = 255;// = 0xff(breadcast)
 		memcpy(ed, pFrame->enet_dstaddr, 6);
 		memcpy(es, pFrame->enet_srcaddr, 6);
 
-		bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->enet_data);
+		bSuccess = mp_aUpperLayer[1]->Receive((unsigned char*)pFrame->enet_data);	// IP 계층으로 올림
+		bSuccess = mp_aUpperLayer[0]->Receive((unsigned char*)pFrame->enet_data);	// ARP 계층으로 올림
 		return bSuccess;
 	}
 	return bSuccess;

@@ -53,12 +53,12 @@ public:
 
 
 public:
-	//BOOL			Receive(unsigned char* ppayload);
+	BOOL			Receive(unsigned char* ppayload);
 	//inline void		SendData();		// ChatAppLayer로 메시지 전송
 	inline void		SendARP(unsigned char* destIP);
 	unsigned char*  MacAddrToHexInt(CString ether);
 	BOOL			ConvertHex(CString cs, unsigned char* hex);
-	void			Refresh(unsigned char *ppayload);
+	void			Refresh();
 
 	typedef struct _ARP_BODY // 28바이트
 	{

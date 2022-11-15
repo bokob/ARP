@@ -16,7 +16,6 @@ private:
 	inline void		ResetHeader();	// 헤더 초기화
 public:
 	BOOL			Receive(unsigned char* ppayload); // 수신
-	int				Send(unsigned char* ppayload, int nlength);
 	int				Send(unsigned char* IPaddr);
 	void			SetDestinAddress(unsigned char* pAddress);
 	void			SetSourceAddress(unsigned char* pAddress);

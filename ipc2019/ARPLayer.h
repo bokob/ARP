@@ -34,8 +34,8 @@ public:
 
 	typedef struct _ARP_BODY // 28바이트
 	{
-		short hardType;							// 1
-		short protType;							// 0x800
+		short hardType;							 
+		short protType;							 
 		char hardSize;							// 하드웨어 주소 길이
 		char protSize;							// 프로토콜 주소의 길이
 		short op;								// ARP에서 어떤 동작을 하는지 알려주기 위한 것 ARP request일 때 1, reply일 때 2

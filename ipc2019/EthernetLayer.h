@@ -21,7 +21,7 @@ private:
 public:
 	BOOL					Receive(unsigned char* ppayload);			// NI 계층에서 수신
 	BOOL					Send(unsigned char* ppayload, int nlength, short frameType);
-	BOOL					Send(unsigned char* ppayload, int nlength, unsigned char* desMacAddr, short frameType);
+	BOOL					Send(unsigned char* ppayload, int nlength, unsigned char* desMacAddr, short frameType); // ARP Reply 날릴 때 쓰이는 것
 	void					SetDestinAddress(unsigned char* pAddress);	// 넘겨받은 source 주소를 Ethernet source주소로 지정
 	void					SetSourceAddress(unsigned char* pAddress);	// 넘겨받은 목적지 주소를 Ethernet destination 주소로 지정
 	unsigned char*			GetDestinAddress();	// 헤더에 들어있는 도착주소를 반환한다.

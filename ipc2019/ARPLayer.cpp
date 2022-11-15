@@ -65,7 +65,7 @@ char* CARPLayer::GetDestinIPAddress()
 }
 
 
-BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, unsigned char* pAddress) // Ethernet 계층으로 보내느 함수
+BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, unsigned char* pAddress) // Ethernet 계층으로 보내는 함수
 {
 	BOOL bSuccess = FALSE;
 	unsigned char* desMacAddr;
@@ -81,18 +81,7 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, unsigned char* pAddre
 		memcpy(m_arpBody.srcIPAddr, ((CIPLayer*)mp_aUpperLayer[0])->GetSourceAddress(), 4);
 		memcpy(m_arpBody.targetIPAddr, pAddress, 4);
 		bSuccess = mp_UnderLayer->Send((unsigned char*)&m_arpBody, 28, (short)0x0608);
-		// lock
 	}
-	else
-	{
-		//unlock
-	}
-	/*
-	//while (true)	// lock
-	{}
-	if (desMacAddr != NULL)		// arp table이 있어야 전송 가능
-		bSuccess = mp_UnderLayer->Send((unsigned char*)&ppayload, nlength, desMacAddr, 0x0008);
-	*/
 
 	return bSuccess;
 }
@@ -106,6 +95,8 @@ BOOL CARPLayer::Receive(unsigned char* ppayload)
 
 	if (ppayload != NULL) 
 	{
+
+
 		setARPElement(recivedARP->srcIPAddr, recivedARP->srcEthernetAddr); // ARP를 보낸 측의 src Ethernet, IP 주소를 해시테이블에 저장한다.
 
 		switch (recivedARP->op)

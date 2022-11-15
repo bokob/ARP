@@ -402,7 +402,7 @@ void Cipc2019Dlg::OnTimer(UINT nIDEvent)	// 타이머
 	CDialog::OnTimer(nIDEvent);
 }
 
-void Cipc2019Dlg::OnBnClickedButtonAddr()	// 설정 버튼 눌렀을 때 일어나는 이벤트
+void Cipc2019Dlg::OnBnClickedButtonAddr()	// select 버튼 눌렀을 때 일어나는 이벤트
 {
 	UpdateData(TRUE);
 	if (!m_bSendReady) 
@@ -500,7 +500,7 @@ unsigned char* Cipc2019Dlg::MacAddrToHexInt(CString ether)
 	return file_ether;
 }
 
-void Cipc2019Dlg::OnCbnSelchangeAdapter() // 어댑터 설정하면 Source Mac, IP 주소 세팅
+void Cipc2019Dlg::OnCbnSelchangeAdapter() // 어댑터 설정하면 Source Mac 주소 설정
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	UpdateData(TRUE);
@@ -573,36 +573,8 @@ void Cipc2019Dlg::OnBnClickedButtonSend()	// 목적지 IP 주소 입력하는 �
 		SendARP(destIP);
 
 
-		 // ARP 테이블 갱신
-		char** keyIPTable = NULL;
-		int tableSize;
-
-		ARPElement* arpElements = m_ARP->getARPElements(&keyIPTable, &tableSize);
-
-		m_ARPListView.DeleteAllItems();
-
-		for (int i = 0; i < tableSize; i++)
-		{
-			CString ipAddr;
-			ipAddr.Format("%.2u.%.2u.%.2u.%.2u",
-				(unsigned char)keyIPTable[i][0], (unsigned char)keyIPTable[i][1], (unsigned char)keyIPTable[i][2],
-				(unsigned char)keyIPTable[i][3]);
-
-			CString macAddr;
-			if (arpElements[i].MACAddr != NULL)
-				macAddr.Format("%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
-					arpElements[i].MACAddr[0], arpElements[i].MACAddr[1], arpElements[i].MACAddr[2],
-					arpElements[i].MACAddr[3], arpElements[i].MACAddr[4], arpElements[i].MACAddr[5]);
-			else
-				macAddr.Format("??:??:??:??:??:??");
-
-			m_ARPListView.InsertItem(i, ipAddr);
-			m_ARPListView.SetItem(i, 1, LVIF_TEXT, macAddr, 0, 0, 0, NULL);
-			if (arpElements[i].state == ARP_COMPLETE)
-				m_ARPListView.SetItem(i, 2, LVIF_TEXT, "complete", 0, 0, 0, NULL);
-			else
-				m_ARPListView.SetItem(i, 2, LVIF_TEXT, "incomplete", 0, 0, 0, NULL);
-		}
+		// ARP 테이블 갱신
+		Refresh();
 	}
 	else
 	{
@@ -611,6 +583,77 @@ void Cipc2019Dlg::OnBnClickedButtonSend()	// 목적지 IP 주소 입력하는 �
 	UpdateData(FALSE);
 }
 
+/*
+BOOL Cipc2019Dlg::Receive(unsigned char* ppayload) 
+{ 
+	ARP_BODY* recivedARP = (ARP_BODY*)ppayload;
+
+	if (recivedARP->op == ARP_REQUEST)
+	{
+		memcpy(m_arpBody.srcEthernetAddr, ((CARPLayer*)mp_UnderLayer)->GetSourceIPAddress(), 4);
+		// 송신측의 IP 주소를 저장한다.
+
+		memcpy(m_arpBody.srcIPAddr, ((CARPLayer*)mp_aUpperLayer[0])->GetSourceEtherAddress(), 6);	
+		// 송신측의 Ethernet 주소를 넣는다.
+
+
+		
+	}
+	else if(recivedARP->op == ARP_REPLY)
+
+
+	return FALSE; 
+}
+*/
+
+
+void Cipc2019Dlg::Refresh()
+{
+	// ARP 테이블 갱신
+	char** keyIPTable = NULL;
+	int tableSize;
+
+	ARPElement* arpElements = m_ARP->getARPElements(&keyIPTable, &tableSize);
+
+	m_ARPListView.DeleteAllItems();
+
+	for (int i = 0; i < tableSize; i++)
+	{
+		CString ipAddr;
+		ipAddr.Format("%.2u.%.2u.%.2u.%.2u",
+			(unsigned char)keyIPTable[i][0], (unsigned char)keyIPTable[i][1], (unsigned char)keyIPTable[i][2],
+			(unsigned char)keyIPTable[i][3]);
+
+		CString macAddr;
+		if (arpElements[i].MACAddr != NULL)
+			macAddr.Format("%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
+				arpElements[i].MACAddr[0], arpElements[i].MACAddr[1], arpElements[i].MACAddr[2],
+				arpElements[i].MACAddr[3], arpElements[i].MACAddr[4], arpElements[i].MACAddr[5]);
+		else
+			macAddr.Format("00:00:00:00:00:00");
+
+		m_ARPListView.InsertItem(i, ipAddr);
+		m_ARPListView.SetItem(i, 1, LVIF_TEXT, macAddr, 0, 0, 0, NULL);
+		if (arpElements[i].state == ARP_COMPLETE)
+			m_ARPListView.SetItem(i, 2, LVIF_TEXT, "complete", 0, 0, 0, NULL);
+		else
+			m_ARPListView.SetItem(i, 2, LVIF_TEXT, "incomplete", 0, 0, 0, NULL);
+	}
+}
+
+BOOL Cipc2019Dlg::Receive(unsigned char* ppayload)
+{
+	BOOL bSuccess = FALSE;
+
+	if (ppayload != NULL)
+	{
+		bSuccess = TRUE;
+		//AfxMessageBox("reply 잘 날라옴");
+	} 
+
+	
+	return bSuccess;
+}
 
 UINT Cipc2019Dlg::ReceiveThread(LPVOID pParam)	// 패킷 수신을 위한 스레드 함수
 {
@@ -618,43 +661,3 @@ UINT Cipc2019Dlg::ReceiveThread(LPVOID pParam)	// 패킷 수신을 위한 스레
 
 	return 0;
 }
-
-
-/*
-// ARP 스레드
-UINT Cipc2019Dlg::SendIPThread(LPVOID pParam)
-{
-
-	Cipc2019Dlg* dlg = (Cipc2019Dlg*)pParam;
-
-	if (dlg->m_IPDstAddr.IsBlank())
-	{
-		AfxMessageBox("IP Address is NOT inputed.");
-		return 0;
-	}
-
-	unsigned char temp_IPAddr[4];
-	dlg->m_IPDstAddr.GetAddress(temp_IPAddr[0], temp_IPAddr[1], temp_IPAddr[2], temp_IPAddr[3]);
-
-	unsigned char temp_targetIP[4];
-	memcpy(temp_targetIP, dlg->m_ARP->GetDestinIPAddress(), 4);
-
-	dlg->m_ARP->SetDestinIPAddress(temp_IPAddr);
-
-	dlg->EnableWindow(false);
-
-	if (dlg->m_ARP->Send(NULL, 0, NULL) == FALSE)
-		AfxMessageBox("IP 주소 없음.");
-	else
-		AfxMessageBox("IP 주소를 찾았음.");
-
-	dlg->EnableWindow(true);
-
-	dlg->m_ARP->SetDestinIPAddress(temp_targetIP);
-
-	dlg->m_IPDstAddr.ClearAddress();
-	dlg->Invalidate();
-
-	return 0;
-}
-*/

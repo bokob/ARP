@@ -149,8 +149,8 @@ BOOL CNILayer::Receive()
 		if (result == 0)
 			continue;
 
-		memcpy(data, pkt_data, ETHER_MAX_SIZE);//copy packet
-		mp_aUpperLayer[0]->Receive(data);						// 패킷 상위 12비트 (목적지 mac주소, 출발 mac주소)가 제거된 데이터 전달
+		memcpy(data, pkt_data, ETHER_MAX_SIZE);    // 패킷 복사
+		mp_aUpperLayer[0]->Receive(data);			// 패킷 상위 12비트 (목적지 mac주소, 출발 mac주소)가 제거된 데이터 전달
 	}
 
 	if (result = -1)   // 오류
@@ -158,42 +158,3 @@ BOOL CNILayer::Receive()
 	else
 		return TRUE;
 }
-
-/*
-UINT CNILayer::ReadingThread(LPVOID pParam)
-{
-	struct pcap_pkthdr* header;
-	const u_char* pkt_data;
-	int result;
-
-	CNILayer* pNI = (CNILayer*)pParam;
-
-	while (pNI->m_thrdSwitch) // 패킷 체크
-	{
-		// 패킷 읽어오기
-		result = pcap_next_ex(pNI->m_AdapterObject, &header, &pkt_data);
-
-		if (result == 0) {
-			//AfxMessageBox("패킷 없음");
-		}
-		else if (result == 1) {
-			//AfxMessageBox("패킷 있음");
-			pNI->Receive((u_char*)pkt_data);
-		}
-		else if (result < 0) {
-			//AfxMessageBox("패킷 오류");
-		}
-	}
-
-	return 0;
-}
-*/
-
-/*
-UINT CNILayer::FileTransferThread(LPVOID pParam)
-{
-	CNILayer* pNI = (CNILayer*)pParam;
-
-	return 0;
-}
-*/
