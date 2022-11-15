@@ -3,14 +3,6 @@
 #include "ARPLayer.h"
 #include "ipc2019Dlg.h"
 
-/*
-CARPLayer::CARPLayer()			// 생성자
-{
-	ResetHeader();
-	ARPTable.InitHashTable(23);
-}
-*/
-
 CARPLayer::CARPLayer(char* pName)	// 생성자
 	: CBaseLayer(pName)
 {
@@ -112,8 +104,8 @@ BOOL CARPLayer::Receive(unsigned char* ppayload)
 	memcpy(m_arpBody.srcEthernetAddr, ((CEthernetLayer*)mp_UnderLayer)->GetSourceAddress(), 6); // 출발 Ethernet 주소를 넣는다.
 	memcpy(m_arpBody.srcIPAddr, ((CIPLayer*)mp_aUpperLayer[0])->GetSourceAddress(), 4);	// 출발 IP 주소를 넣는다.
 
-	if (ppayload != NULL) {
-
+	if (ppayload != NULL) 
+	{
 		setARPElement(recivedARP->srcIPAddr, recivedARP->srcEthernetAddr); // ARP를 보낸 측의 src Ethernet, IP 주소를 해시테이블에 저장한다.
 
 		switch (recivedARP->op)
@@ -149,17 +141,6 @@ BOOL CARPLayer::Receive(unsigned char* ppayload)
 				srcIPAddr:			수신측의 IP 주소 담겨 있음
 				*/
 
-				/*
-				// ARP 테이블 갱신
-				int row = ((Cipc2019Dlg*)mp_aUpperLayer[0])->m_ARPListView.GetItemCount();	// ARP Table에 행이 얼마인지 구한다.
-				
-				((Cipc2019Dlg*)mp_aUpperLayer[0])->m_ARPListView.InsertItem(row, strIP); // 행 추가
-				((Cipc2019Dlg*)mp_aUpperLayer[0])->m_ARPListView.SetItemText(row, 1, strMac); // 열 값 변경
-				*/
-
-				// ARP 테이블 갱신
-				//((Cipc2019Dlg*)mp_aUpperLayer[0])->Refresh((unsigned char*)recivedARP);
-
 				// ARP Reply 전송
 				mp_UnderLayer->Send((unsigned char*)recivedARP, 28, (unsigned char*)recivedARP->targetEthernetAddr, (short)0x0608);
 			}
@@ -180,19 +161,7 @@ BOOL CARPLayer::Receive(unsigned char* ppayload)
 				}
 			}
 			break;
-		/*
-		case ARP_REPLY:
-			CString strIP = m_arpBody.srcIPAddr;
-			LVFINDINFO lvFindINfo;
-			lvFindINfo.flags = LVFI_STRING;
-			lvFindINfo.psz = strIP;
-
-			int idx = ((Cipc2019Dlg*)mp_aUpperLayer[0])->m_ARPListView.FindItem(&lvFindINfo);
-
-			((Cipc2019Dlg*)mp_aUpperLayer[0])->m_ARPListView.SetItemText(idx, 1, m_arpBody.srcEthernetAddr);
-		*/
 		}
-		
 	}
 	return 0;
 }

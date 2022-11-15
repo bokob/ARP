@@ -451,6 +451,7 @@ void Cipc2019Dlg::OnBnClickedButtonAddr()	// 설정 버튼 눌렀을 때 일어�
 
 		m_bSendReady = FALSE;
 		m_ARP->initARPTable();
+		m_ARPListView.DeleteAllItems();
 		SetDlgState(IPC_ADDR_RESET);
 		SetDlgState(IPC_INITIALIZING);
 	}
@@ -499,28 +500,6 @@ unsigned char* Cipc2019Dlg::MacAddrToHexInt(CString ether)
 	return file_ether;
 }
 
-/*
-BOOL Cipc2019Dlg::ConvertHex(CString cs, unsigned char* hex) // 문자열을 Hex로 바꾸는 함수
-{
-	int i;
-	char* srcStr = cs.GetBuffer(0);
-
-	for (i = 0; i < 12; i++)
-	{
-		// error
-		if (srcStr[i] < '0' || (srcStr[i] > '9' && srcStr[i] < 'a') || srcStr[i] > 'f')
-			return FALSE;
-	}
-	for (i = 0; i < 12; i = i + 2)
-	{
-		hex[i / 2] = (((srcStr[i] > '9') ? (srcStr[i] - 87) : (srcStr[i] - '0')) << 4 |
-			((srcStr[i + 1] > '9') ? (srcStr[i + 1] - 87) : (srcStr[i + 1] - '0')));
-	}
-	return TRUE;
-}
-*/
-
-
 void Cipc2019Dlg::OnCbnSelchangeAdapter() // 어댑터 설정하면 Source Mac, IP 주소 세팅
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
@@ -537,11 +516,6 @@ void Cipc2019Dlg::OnCbnSelchangeAdapter() // 어댑터 설정하면 Source Mac, 
 
 	// 어댑터 이름으로 mfc에서 mac 주소 나오는 곳에 Mac주소 넣기
 	m_MacSrcAddr = m_NI->GetNICardAddress((char*)nicName.GetString());
-
-	/*
-	BYTE srcIP[4];
-	m_IPSrcAddr.GetAddress(srcIP[0], srcIP[1], srcIP[2], srcIP[3]);
-	*/
 
 	UpdateData(FALSE);
 }
@@ -637,67 +611,6 @@ void Cipc2019Dlg::OnBnClickedButtonSend()	// 목적지 IP 주소 입력하는 �
 	UpdateData(FALSE);
 }
 
-void Cipc2019Dlg::Refresh(unsigned char* ppayload)
-{
-	// TODO: Add your control notification handler code here
-	/*
-	char** keyIPTable = NULL;
-	int tableSize;
-
-	ARPElement* arpElements = m_ARP->getARPElements(&keyIPTable, &tableSize);
-
-	m_ARPListView.DeleteAllItems();
-
-	for (int i = 0; i < tableSize; i++)
-	{
-		CString ipAddr;
-		ipAddr.Format("%.2u.%.2u.%.2u.%.2u",
-			(unsigned char)keyIPTable[i][0], (unsigned char)keyIPTable[i][1], (unsigned char)keyIPTable[i][2],
-			(unsigned char)keyIPTable[i][3]);
-
-		CString macAddr;
-		if (arpElements[i].MACAddr != NULL)
-			macAddr.Format("%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
-				arpElements[i].MACAddr[0], arpElements[i].MACAddr[1], arpElements[i].MACAddr[2],
-				arpElements[i].MACAddr[3], arpElements[i].MACAddr[4], arpElements[i].MACAddr[5]);
-		else
-			macAddr.Format("00:00:00:00:00:00");
-
-		m_ARPListView.InsertItem(i, ipAddr);
-		m_ARPListView.SetItem(i, 1, LVIF_TEXT, macAddr, 0, 0, 0, NULL);
-		if (arpElements[i].state == ARP_COMPLETE)
-			m_ARPListView.SetItem(i, 2, LVIF_TEXT, "complete", 0, 0, 0, NULL);
-		else
-			m_ARPListView.SetItem(i, 2, LVIF_TEXT, "incomplete", 0, 0, 0, NULL);
-	*/
-
-	/*
-	ARP_BODY* recivedARP = (ARP_BODY*)ppayload;
-
-	char* tempIP[4];
-	char* tempMac[6];
-
-	memcpy(tempIP, recivedARP->targetIPAddr, 4);
-	memcpy(tempMac, recivedARP->targetEthernetAddr, 6);
-
-	LVFINDINFO lv;
-	lv.flags = LVFI_STRING;
-	lv.psz = strIP;
-	int idx = m_ARPListView.FindItem(&lv, -1);
-	
-	if (idx == -1)
-	{// 만약 IP주소가 존재한다면 -> 송신한 측이니까 행을 찾아서 mac 주소, state를 변경해준다.
-		m_ARPListView.SetItemText(idx, 1, strMac);
-		m_ARPListView.SetItemText(idx, 2, "complete");
-	}
-	else // idx >=0  
-	{// 만약 IP 주소가 없다면->수신 받은 측이니까 행을 추가해준다. 추가할 때 IP주소와 mac주소를 넣어준다.
-		int row = m_ARPListView.GetItemCount();	// ARP Table에 행이 얼마인지 구한다.
-		m_ARPListView.InsertItem(row, strIP); // 행 추가
-		m_ARPListView.SetItemText(row, 1, strMac); // 열 값 추가
-	}
-	*/
-}
 
 UINT Cipc2019Dlg::ReceiveThread(LPVOID pParam)	// 패킷 수신을 위한 스레드 함수
 {
@@ -705,6 +618,7 @@ UINT Cipc2019Dlg::ReceiveThread(LPVOID pParam)	// 패킷 수신을 위한 스레
 
 	return 0;
 }
+
 
 /*
 // ARP 스레드
