@@ -450,6 +450,7 @@ void Cipc2019Dlg::OnBnClickedButtonAddr()	// 설정 버튼 눌렀을 때 일어�
 		TerminateThread(m_RecvThread->m_hThread, 0);
 
 		m_bSendReady = FALSE;
+		m_ARP->initARPTable();
 		SetDlgState(IPC_ADDR_RESET);
 		SetDlgState(IPC_INITIALIZING);
 	}
@@ -596,13 +597,106 @@ void Cipc2019Dlg::OnBnClickedButtonSend()	// 목적지 IP 주소 입력하는 �
 
 		unsigned char* destIP = (unsigned char*)szIPAddr;
 		SendARP(destIP);
+
+
+		 // ARP 테이블 갱신
+		char** keyIPTable = NULL;
+		int tableSize;
+
+		ARPElement* arpElements = m_ARP->getARPElements(&keyIPTable, &tableSize);
+
+		m_ARPListView.DeleteAllItems();
+
+		for (int i = 0; i < tableSize; i++)
+		{
+			CString ipAddr;
+			ipAddr.Format("%.2u.%.2u.%.2u.%.2u",
+				(unsigned char)keyIPTable[i][0], (unsigned char)keyIPTable[i][1], (unsigned char)keyIPTable[i][2],
+				(unsigned char)keyIPTable[i][3]);
+
+			CString macAddr;
+			if (arpElements[i].MACAddr != NULL)
+				macAddr.Format("%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
+					arpElements[i].MACAddr[0], arpElements[i].MACAddr[1], arpElements[i].MACAddr[2],
+					arpElements[i].MACAddr[3], arpElements[i].MACAddr[4], arpElements[i].MACAddr[5]);
+			else
+				macAddr.Format("??:??:??:??:??:??");
+
+			m_ARPListView.InsertItem(i, ipAddr);
+			m_ARPListView.SetItem(i, 1, LVIF_TEXT, macAddr, 0, 0, 0, NULL);
+			if (arpElements[i].state == ARP_COMPLETE)
+				m_ARPListView.SetItem(i, 2, LVIF_TEXT, "complete", 0, 0, 0, NULL);
+			else
+				m_ARPListView.SetItem(i, 2, LVIF_TEXT, "incomplete", 0, 0, 0, NULL);
+		}
 	}
 	else
 	{
 		AfxMessageBox(" 목적지 IP 주소 입력 안됨. 다시 확인하셈 ");
 	}
-
 	UpdateData(FALSE);
+}
+
+void Cipc2019Dlg::Refresh(unsigned char* ppayload)
+{
+	// TODO: Add your control notification handler code here
+	/*
+	char** keyIPTable = NULL;
+	int tableSize;
+
+	ARPElement* arpElements = m_ARP->getARPElements(&keyIPTable, &tableSize);
+
+	m_ARPListView.DeleteAllItems();
+
+	for (int i = 0; i < tableSize; i++)
+	{
+		CString ipAddr;
+		ipAddr.Format("%.2u.%.2u.%.2u.%.2u",
+			(unsigned char)keyIPTable[i][0], (unsigned char)keyIPTable[i][1], (unsigned char)keyIPTable[i][2],
+			(unsigned char)keyIPTable[i][3]);
+
+		CString macAddr;
+		if (arpElements[i].MACAddr != NULL)
+			macAddr.Format("%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
+				arpElements[i].MACAddr[0], arpElements[i].MACAddr[1], arpElements[i].MACAddr[2],
+				arpElements[i].MACAddr[3], arpElements[i].MACAddr[4], arpElements[i].MACAddr[5]);
+		else
+			macAddr.Format("00:00:00:00:00:00");
+
+		m_ARPListView.InsertItem(i, ipAddr);
+		m_ARPListView.SetItem(i, 1, LVIF_TEXT, macAddr, 0, 0, 0, NULL);
+		if (arpElements[i].state == ARP_COMPLETE)
+			m_ARPListView.SetItem(i, 2, LVIF_TEXT, "complete", 0, 0, 0, NULL);
+		else
+			m_ARPListView.SetItem(i, 2, LVIF_TEXT, "incomplete", 0, 0, 0, NULL);
+	*/
+
+	/*
+	ARP_BODY* recivedARP = (ARP_BODY*)ppayload;
+
+	char* tempIP[4];
+	char* tempMac[6];
+
+	memcpy(tempIP, recivedARP->targetIPAddr, 4);
+	memcpy(tempMac, recivedARP->targetEthernetAddr, 6);
+
+	LVFINDINFO lv;
+	lv.flags = LVFI_STRING;
+	lv.psz = strIP;
+	int idx = m_ARPListView.FindItem(&lv, -1);
+	
+	if (idx == -1)
+	{// 만약 IP주소가 존재한다면 -> 송신한 측이니까 행을 찾아서 mac 주소, state를 변경해준다.
+		m_ARPListView.SetItemText(idx, 1, strMac);
+		m_ARPListView.SetItemText(idx, 2, "complete");
+	}
+	else // idx >=0  
+	{// 만약 IP 주소가 없다면->수신 받은 측이니까 행을 추가해준다. 추가할 때 IP주소와 mac주소를 넣어준다.
+		int row = m_ARPListView.GetItemCount();	// ARP Table에 행이 얼마인지 구한다.
+		m_ARPListView.InsertItem(row, strIP); // 행 추가
+		m_ARPListView.SetItemText(row, 1, strMac); // 열 값 추가
+	}
+	*/
 }
 
 UINT Cipc2019Dlg::ReceiveThread(LPVOID pParam)	// 패킷 수신을 위한 스레드 함수

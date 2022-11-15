@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "stdafx.h"
 #include "ARPLayer.h"
+#include "ipc2019Dlg.h"
 
 /*
 CARPLayer::CARPLayer()			// 생성자
@@ -108,23 +109,58 @@ BOOL CARPLayer::Receive(unsigned char* ppayload)
 {
 	ARP_BODY* recivedARP = (ARP_BODY*)ppayload;
 
-	memcpy(m_arpBody.srcEthernetAddr, ((CEthernetLayer*)mp_UnderLayer)->GetSourceAddress(), 6);
-	memcpy(m_arpBody.srcIPAddr, ((CIPLayer*)mp_aUpperLayer[0])->GetSourceAddress(), 4);
+	memcpy(m_arpBody.srcEthernetAddr, ((CEthernetLayer*)mp_UnderLayer)->GetSourceAddress(), 6); // 출발 Ethernet 주소를 넣는다.
+	memcpy(m_arpBody.srcIPAddr, ((CIPLayer*)mp_aUpperLayer[0])->GetSourceAddress(), 4);	// 출발 IP 주소를 넣는다.
 
 	if (ppayload != NULL) {
 
-		setARPElement(recivedARP->srcIPAddr, recivedARP->srcEthernetAddr);
+		setARPElement(recivedARP->srcIPAddr, recivedARP->srcEthernetAddr); // ARP를 보낸 측의 src Ethernet, IP 주소를 해시테이블에 저장한다.
 
 		switch (recivedARP->op)
 		{
-		case ARP_REQUEST:
-			if (!strncmp(recivedARP->targetIPAddr, m_arpBody.srcIPAddr, 4))
-			{
+		case ARP_REQUEST:	// ARP Request인 경우
+			if (!strncmp(recivedARP->targetIPAddr, m_arpBody.srcIPAddr, 4))	 
+			{   // 어떤 IP의 Mac주소를 알고 싶어 보낸 측의 ARP의 목적지 IP가 수신측의 IP 주소와 동일한 경우
+				
+				// op 변경
 				recivedARP->op = 0x0200;
-				memcpy(recivedARP->targetEthernetAddr, recivedARP->srcEthernetAddr, 6);
-				memcpy(recivedARP->srcEthernetAddr, m_arpBody.srcEthernetAddr, 6);
+
+				memcpy(recivedARP->targetEthernetAddr, recivedARP->srcEthernetAddr, 6); 
+				// 목적지 Ethernet 주소에 송신측의 Ethernet 주소를 넣는다.
+				
+				//CString strMac = recivedARP->srcEthernetAddr; // 송신측의 Mac 주소를 나중에 ARP 테이블 갱신을 위해 임시 저장
+
+				memcpy(recivedARP->srcEthernetAddr, m_arpBody.srcEthernetAddr, 6);		
+				// 송신측의 Ethernet 주소가 저장되어있던 곳에 수신받은 측의 Ethernet 주소를 넣는다.
+				
 				memcpy(recivedARP->targetIPAddr, recivedARP->srcIPAddr, 4);
+				// 목적지 IP 주소에 송신측의 IP주소를 넣는다.
+
+				//CString strIP = recivedARP->srcIPAddr;	// 송신측의 IP 주소를 나중에 ARP 테이블 갱신을 위해 임시 저장
+
 				memcpy(recivedARP->srcIPAddr, m_arpBody.srcIPAddr, 4);
+				// 송신측의 IP주소가 저장되어있던 곳에 수신받은 측의 IP 주소를 넣는다.
+
+				/*
+				현재 상태
+				targetEthernetAddr: 송신측의 Ethernet 주소 담겨 있음
+				srcEthernetAddr:	수신측의 Ethernet 주소 담겨 있음
+				targetIPAddr:		송신측의 IP 주소 담겨 있음
+				srcIPAddr:			수신측의 IP 주소 담겨 있음
+				*/
+
+				/*
+				// ARP 테이블 갱신
+				int row = ((Cipc2019Dlg*)mp_aUpperLayer[0])->m_ARPListView.GetItemCount();	// ARP Table에 행이 얼마인지 구한다.
+				
+				((Cipc2019Dlg*)mp_aUpperLayer[0])->m_ARPListView.InsertItem(row, strIP); // 행 추가
+				((Cipc2019Dlg*)mp_aUpperLayer[0])->m_ARPListView.SetItemText(row, 1, strMac); // 열 값 변경
+				*/
+
+				// ARP 테이블 갱신
+				//((Cipc2019Dlg*)mp_aUpperLayer[0])->Refresh((unsigned char*)recivedARP);
+
+				// ARP Reply 전송
 				mp_UnderLayer->Send((unsigned char*)recivedARP, 28, (unsigned char*)recivedARP->targetEthernetAddr, (short)0x0608);
 			}
 			else
@@ -133,7 +169,7 @@ BOOL CARPLayer::Receive(unsigned char* ppayload)
 				memcpy(&ip, recivedARP->targetIPAddr, 4);
 				ARPElement* _element = new(ARPElement);
 
-				if (ProxyTable.Lookup(ip, *_element))		// proxy arp reply
+				if (ProxyTable.Lookup(ip, *_element))		// Proxy ARP Reply 경우
 				{
 					recivedARP->op = 0x0200;
 					memcpy(recivedARP->targetEthernetAddr, recivedARP->srcEthernetAddr, 6);
@@ -144,7 +180,19 @@ BOOL CARPLayer::Receive(unsigned char* ppayload)
 				}
 			}
 			break;
+		/*
+		case ARP_REPLY:
+			CString strIP = m_arpBody.srcIPAddr;
+			LVFINDINFO lvFindINfo;
+			lvFindINfo.flags = LVFI_STRING;
+			lvFindINfo.psz = strIP;
+
+			int idx = ((Cipc2019Dlg*)mp_aUpperLayer[0])->m_ARPListView.FindItem(&lvFindINfo);
+
+			((Cipc2019Dlg*)mp_aUpperLayer[0])->m_ARPListView.SetItemText(idx, 1, m_arpBody.srcEthernetAddr);
+		*/
 		}
+		
 	}
 	return 0;
 }
@@ -177,7 +225,7 @@ unsigned char* CARPLayer::getMacAddressFromARPTable(unsigned char* pAddress)	// 
 	return NULL;
 }
 
-bool CARPLayer::setARPElement(char* ipAddr, char* macAddr)
+bool CARPLayer::setARPElement(char* ipAddr, char* macAddr) // 해시테이블로 만들어진 ARP 테이블에 저장한다.
 {
 	ARPElement* arpElement = new ARPElement;
 

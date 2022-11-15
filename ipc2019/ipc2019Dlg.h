@@ -9,6 +9,7 @@
 //#include "ARPLayer.h"
 #include "EthernetLayer.h"	// Added by ClassView
 #include "NILayer.h"
+#include "ARPLayer.h"
 
 // Cipc2019Dlg 대화 상자
 class Cipc2019Dlg : public CDialogEx, public CBaseLayer
@@ -57,6 +58,28 @@ public:
 	inline void		SendARP(unsigned char* destIP);
 	unsigned char*  MacAddrToHexInt(CString ether);
 	BOOL			ConvertHex(CString cs, unsigned char* hex);
+	void			Refresh(unsigned char *ppayload);
+
+	typedef struct _ARP_BODY // 28바이트
+	{
+		short hardType;							// 1
+		short protType;							// 0x800
+		char hardSize;							// 하드웨어 주소 길이
+		char protSize;							// 프로토콜 주소의 길이
+		short op;								// ARP에서 어떤 동작을 하는지 알려주기 위한 것 ARP request일 때 1, reply일 때 2
+		char srcEthernetAddr[6];		// 출발 Ethernet 주소
+		char srcIPAddr[4];				// 출발 IP 주소
+		char targetEthernetAddr[6];	// 목적지 Ethernet 주소
+		char targetIPAddr[4];			// 목적지 IP 주소
+	} ARP_BODY, * PARP_BODY;
+
+
+protected:
+	ARP_BODY	m_arpBody;
+	typedef CMap <int, int, ARPElement, ARPElement&> CMapForARPTable;
+	CMapForARPTable ARPTable;
+	CMapForARPTable ProxyTable;
+
 
 private:
 	CLayerManager	m_LayerMgr;
