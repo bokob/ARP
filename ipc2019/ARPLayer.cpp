@@ -95,15 +95,15 @@ BOOL CARPLayer::Receive(unsigned char* ppayload)
 
 	if (ppayload != NULL) 
 	{
-
-
-		setARPElement(recivedARP->srcIPAddr, recivedARP->srcEthernetAddr); // ARP를 보낸 측의 src Ethernet, IP 주소를 해시테이블에 저장한다.
+		//setARPElement(recivedARP->srcIPAddr, recivedARP->srcEthernetAddr); // ARP를 보낸 측의 src Ethernet, IP 주소를 해시테이블에 저장한다.
 
 		switch (recivedARP->op)
 		{
 		case ARP_REQUEST:	// ARP Request인 경우
 			if (!strncmp(recivedARP->targetIPAddr, m_arpBody.srcIPAddr, 4))	 
 			{   // 어떤 IP의 Mac주소를 알고 싶어 보낸 측의 ARP의 목적지 IP가 수신측의 IP 주소와 동일한 경우
+
+				setARPElement(recivedARP->srcIPAddr, recivedARP->srcEthernetAddr); // ARP를 보낸 측의 src Ethernet, IP 주소를 해시테이블에 저장한다.
 				
 				// op 변경
 				recivedARP->op = 0x0200;
@@ -152,6 +152,20 @@ BOOL CARPLayer::Receive(unsigned char* ppayload)
 				}
 			}
 			break;
+		case ARP_REPLY:	// ARP RePLY인 경우
+			if (!strncmp(recivedARP->targetIPAddr, m_arpBody.srcIPAddr, 4))
+			{
+				setARPElement(recivedARP->srcIPAddr, recivedARP->srcEthernetAddr); // ARP를 보낸 측의 src Ethernet, IP 주소를 해시테이블에 저장한다.
+
+				/*
+				현재 상태
+				targetEthernetAddr: Reply 받은 측의 Ethernet 주소
+				srcEthernetAddr:	Reply 날린 측의 Ethernet 주소 담겨 있음
+				targetIPAddr:		Reply 받은 측의 주소 담겨 있음
+				srcIPAddr:			Reply 날린 측의 IP 주소 담겨 있음
+				*/
+				mp_aUpperLayer[0]->Receive((unsigned char*)recivedARP); // 표를 갱신하기 위해 Dlg 계층으로 보냄 
+			}
 		}
 	}
 	return 0;

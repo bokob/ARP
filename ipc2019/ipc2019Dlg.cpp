@@ -645,11 +645,17 @@ BOOL Cipc2019Dlg::Receive(unsigned char* ppayload)
 {
 	BOOL bSuccess = FALSE;
 
+	ARP_BODY* recivedARP = (ARP_BODY*)ppayload;
+
+	Refresh();
+
+	/*
 	if (ppayload != NULL)
 	{
 		bSuccess = TRUE;
 		//AfxMessageBox("reply 잘 날라옴");
 	} 
+	*/
 
 	
 	return bSuccess;
