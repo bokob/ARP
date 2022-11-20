@@ -191,6 +191,7 @@
   <ItemGroup>
     <ClInclude Include="ARPLayer.h" />
     <ClInclude Include="BaseLayer.h" />
+    <ClInclude Include="ProxyAddDlg.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="ipc2019.h" />
     <ClInclude Include="ipc2019Dlg.h" />
@@ -206,6 +207,7 @@
   <ItemGroup>
     <ClCompile Include="ARPLayer.cpp" />
     <ClCompile Include="BaseLayer.cpp" />
+    <ClCompile Include="ProxyAddDlg.cpp" />
     <ClCompile Include="EthernetLayer.cpp" />
     <ClCompile Include="ipc2019.cpp" />
     <ClCompile Include="ipc2019Dlg.cpp" />

@@ -27,6 +27,7 @@ public:
 	unsigned char*		getMacAddressFromARPTable(unsigned char* pAddress); // ARP Table에서 Mac주소 가져오는 함수
 	bool				setARPElement(char* ipAddr, char* macAddr);
 	ARPElement*			getARPElements(char*** keyIPs, int* tableSize);
+	bool				deleteOneARPTable(unsigned char* arpIPAddr);
 	bool				insertProxyTable(unsigned char* proxyIPAddr, unsigned char* proxyMacAddr);
 	bool				deleteProxyTable(unsigned char* proxyIPAddr);
 	ARPElement*			getProxyElements(char*** keyIPs, int* tableSize);

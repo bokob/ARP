@@ -7,6 +7,7 @@
 #include "ipc2019.h"
 #include "ipc2019Dlg.h"
 #include "afxdialogex.h"
+#include "ProxyAddDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -69,6 +70,7 @@ Cipc2019Dlg::Cipc2019Dlg(CWnd* pParent /*=nullptr*/)
 	//, IPDstAddr(_T(""))
 	//, m_IPDstAddr(_T(""))
 	// m_stDstAddr(_T(""))
+	, m_strGratuitousAddr(_T(""))
 {
 	//대화상자 멤버 변수 초기화
 	//m_unDstAddr = 0;
@@ -108,6 +110,7 @@ void Cipc2019Dlg::DoDataExchange(CDataExchange* pDX)
 	//  DDX_Control(pDX, IDC_EDIT_SRC_MAC_ADDR, m_unSrcAddr);
 	DDX_Control(pDX, IDC_SRC_IP_ADDR, m_IPSrcAddr);
 	DDX_Control(pDX, IDC_EDIT_DST_IP_ADDR, m_IPDstAddr);
+	DDX_Text(pDX, IDC_HW_ADDR, m_strGratuitousAddr);
 }
 
 // 레지스트리에 등록하기 위한 변수
@@ -141,6 +144,9 @@ BEGIN_MESSAGE_MAP(Cipc2019Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_ARP_ALL_DELETE_BUTTON, &Cipc2019Dlg::OnBnClickedArpAllDeleteButton)
 	ON_BN_CLICKED(IDC_ARP_ITEM_DELETE_BUTTON, &Cipc2019Dlg::OnBnClickedArpItemDeleteButton)
 	ON_BN_CLICKED(IDC_BUTTON_SEND, &Cipc2019Dlg::OnBnClickedButtonSend)
+	ON_BN_CLICKED(IDC_GRATUITOUS_SEND, &Cipc2019Dlg::OnBnClickedGratuitousSend)
+	ON_BN_CLICKED(IDC_PARP_ADD_BUTTON, &Cipc2019Dlg::OnBnClickedParpAddButton)
+	ON_BN_CLICKED(IDC_PARP_DELETE_BUTTON, &Cipc2019Dlg::OnBnClickedParpDeleteButton)
 END_MESSAGE_MAP()
 
 
@@ -313,6 +319,8 @@ void Cipc2019Dlg::SetDlgState(int state)	// 영역별 들어갈 내용
 	CButton* pSetAddrButton = (CButton*)GetDlgItem(bt_setting);
 	CButton* pAllDeleteButton = (CButton*)GetDlgItem(IDC_ARP_ALL_DELETE_BUTTON);
 	CButton* pItemDeleteButton = (CButton*)GetDlgItem(IDC_ARP_ITEM_DELETE_BUTTON);
+	CButton* pPAddButton = (CButton*)GetDlgItem(IDC_PARP_ADD_BUTTON);
+	CButton* pPDeleteButton = (CButton*)GetDlgItem(IDC_PARP_DELETE_BUTTON);
 	//CEdit* pDstEdit = (CEdit*)GetDlgItem(IDC_EDIT_DST);
 	/*
 	CEdit* pMsgEdit = (CEdit*)GetDlgItem(IDC_EDIT3);
@@ -325,10 +333,10 @@ void Cipc2019Dlg::SetDlgState(int state)	// 영역별 들어갈 내용
 	case IPC_INITIALIZING:
 		pSendButton->EnableWindow(FALSE);
 		m_IPDstAddr.EnableWindow(FALSE);
-
 		pAllDeleteButton->EnableWindow(FALSE);
 		pItemDeleteButton->EnableWindow(FALSE);
-		//m_ListChat.EnableWindow(FALSE);
+		pPAddButton->EnableWindow(TRUE);
+		pPDeleteButton->EnableWindow(TRUE);
 		break;
 	case IPC_ADDR_SET:	// Select 버튼 누름
 		pSetAddrButton->SetWindowText(_T("재설정"));
@@ -500,6 +508,30 @@ unsigned char* Cipc2019Dlg::MacAddrToHexInt(CString ether)
 	return file_ether;
 }
 
+BOOL Cipc2019Dlg::ConvertStringToIP(CString cs, unsigned char* ip) //change string to hex
+{
+	int j = 0;
+	LPCSTR ipString = cs.GetString();
+
+	memset(ip, 0, 4);
+
+	for (int i = 0; i < 4; i++)
+	{
+		while (ipString[j] != NULL && ipString[j] != '.')
+		{
+			ip[i] *= 10;
+			ip[i] += ipString[j] - '0';
+			j++;
+		}
+		j++;
+	}
+
+	return true;
+}
+
+
+
+
 void Cipc2019Dlg::OnCbnSelchangeAdapter() // 어댑터 설정하면 Source Mac 주소 설정
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
@@ -525,16 +557,35 @@ void Cipc2019Dlg::OnBnClickedArpAllDeleteButton()	// ARP 테이블의 모든 행
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	m_ARPListView.DeleteAllItems();
+	m_ARP->initARPTable();
 }
 
 
 void Cipc2019Dlg::OnBnClickedArpItemDeleteButton()	// ARP 테이블이 선택한 한 행 삭제
 {
+	/*
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	POSITION pos;
 	pos = m_ARPListView.GetFirstSelectedItemPosition();
 	int idx = m_ARPListView.GetNextSelectedItem(pos);
 	m_ARPListView.DeleteItem(idx);
+	*/
+	
+	UpdateData(TRUE);
+
+	POSITION pos = m_ARPListView.GetFirstSelectedItemPosition();
+	int idx = m_ARPListView.GetNextSelectedItem(pos);
+	CString strIP = m_ARPListView.GetItemText(idx, 0);
+	m_ARPListView.DeleteItem(idx);
+
+	unsigned char* deletedIP = new unsigned char[4];
+
+	ConvertStringToIP(strIP, deletedIP);
+	m_ARP->deleteOneARPTable(deletedIP);
+
+	Refresh();
+
+	UpdateData(FALSE);
 
 }
 
@@ -641,6 +692,42 @@ void Cipc2019Dlg::Refresh()
 	}
 }
 
+void Cipc2019Dlg::RefreshP()
+{
+	// PARP 테이블 갱신
+	char** keyIPTable = NULL;
+	int tableSize;
+
+	ARPElement* proxyElements = m_ARP->getProxyElements(&keyIPTable, &tableSize);
+
+	m_PARPListView.DeleteAllItems();
+
+	for (int i = 0; i < tableSize; i++)
+	{
+		CString ipAddr;
+		ipAddr.Format("%.2u.%.2u.%.2u.%.2u",
+			(unsigned char)keyIPTable[i][0], (unsigned char)keyIPTable[i][1], (unsigned char)keyIPTable[i][2],
+			(unsigned char)keyIPTable[i][3]);
+
+		CString macAddr;
+		if (proxyElements[i].MACAddr != NULL)
+			macAddr.Format("%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
+				proxyElements[i].MACAddr[0], proxyElements[i].MACAddr[1], proxyElements[i].MACAddr[2],
+				proxyElements[i].MACAddr[3], proxyElements[i].MACAddr[4], proxyElements[i].MACAddr[5]);
+		else
+			macAddr.Format("00:00:00:00:00:00");
+
+		m_PARPListView.InsertItem(i, ipAddr);
+		m_PARPListView.SetItem(i, 1, LVIF_TEXT, macAddr, 0, 0, 0, NULL);
+		if (proxyElements[i].state == ARP_COMPLETE)
+			m_PARPListView.SetItem(i, 2, LVIF_TEXT, "COMPLETE", 0, 0, 0, NULL);
+		else
+			m_PARPListView.SetItem(i, 2, LVIF_TEXT, "INCOMPLETE", 0, 0, 0, NULL);
+	}
+}
+
+
+
 BOOL Cipc2019Dlg::Receive(unsigned char* ppayload)
 {
 	BOOL bSuccess = FALSE;
@@ -666,4 +753,107 @@ UINT Cipc2019Dlg::ReceiveThread(LPVOID pParam)	// 패킷 수신을 위한 스레
 	((CNILayer*)pParam)->Receive();	// 쓰레드를 이용해 NILayer의 Receive 함수를 호출
 
 	return 0;
+}
+
+void Cipc2019Dlg::OnBnClickedGratuitousSend()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData(TRUE);
+
+	if (!m_strGratuitousAddr.IsEmpty())
+	{
+		/*
+		if (m_strGratuitousAddr.GetLength() != 12)
+		{
+			MessageBox("MAC 주소 12자리 입력하셈");
+			return;
+		}
+		*/
+
+		// 입력받은 H/W 주소를 Source Mac 주소로 설정
+		unsigned char* eth_temp = MacAddrToHexInt(m_strGratuitousAddr);
+		ETHERNET_ADDR srcaddr;
+		srcaddr.addr0 = eth_temp[0];
+		srcaddr.addr1 = eth_temp[1];
+		srcaddr.addr2 = eth_temp[2];
+		srcaddr.addr3 = eth_temp[3];
+		srcaddr.addr4 = eth_temp[4];
+		srcaddr.addr5 = eth_temp[5];
+		m_Ether->SetSourceAddress(srcaddr.addrs);
+
+		// Destination Mac 주소 설정
+		CString m_stDstAdd = "FF:FF:FF:FF:FF:FF";
+		unsigned char* eth_temp2 = MacAddrToHexInt(m_strGratuitousAddr);
+		ETHERNET_ADDR dstaddr;
+		dstaddr.addr0 = eth_temp2[0];
+		dstaddr.addr1 = eth_temp2[1];
+		dstaddr.addr2 = eth_temp2[2];
+		dstaddr.addr3 = eth_temp2[3];
+		dstaddr.addr4 = eth_temp2[4];
+		dstaddr.addr5 = eth_temp2[5];
+		m_Ether->SetDestinAddress(dstaddr.addrs);
+
+		SendARP(m_IP->GetSourceAddress());
+	}
+
+	UpdateData(FALSE);
+}
+
+
+void Cipc2019Dlg::OnBnClickedParpAddButton()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CProxyAddDlg dlg;
+	dlg.DoModal(); // Add 버튼을 누르면 Proxy Dlg 창 띄운다.
+	/*
+	if (dlg.DoModal() == IDOK)
+	{
+		unsigned char _hexProxyMacAddr[6];
+		unsigned char _proxyIPAddr[4];
+
+		if (dlg.m_EtherAddr.GetLength() != 17)
+		{
+			MessageBox("MAC 주소 12자리를 입력해 주세요.");
+			return;
+		}
+
+		// Proxy Source Mac 주소 설정
+		unsigned char* tmp = MacAddrToHexInt(dlg.m_EtherAddr);
+		_hexProxyMacAddr[0] = tmp[0];
+		_hexProxyMacAddr[1] = tmp[1];
+		_hexProxyMacAddr[2] = tmp[2];
+		_hexProxyMacAddr[3] = tmp[3];
+		_hexProxyMacAddr[4] = tmp[4];
+		_hexProxyMacAddr[5] = tmp[5];
+
+		dlg.m_IPAddr.GetAddress(_proxyIPAddr[0], _proxyIPAddr[1], _proxyIPAddr[2], _proxyIPAddr[3]);
+
+		m_ARP->insertProxyTable(_proxyIPAddr, _hexProxyMacAddr);
+		RefreshP();
+
+		UpdateData(FALSE);
+
+		Invalidate();
+	}
+	*/
+}
+
+
+void Cipc2019Dlg::OnBnClickedParpDeleteButton()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData(TRUE);
+
+	POSITION pos = m_PARPListView.GetFirstSelectedItemPosition();
+	int nItem = m_PARPListView.GetNextSelectedItem(pos);
+	CString strIP = m_PARPListView.GetItemText(nItem, 0);
+
+	unsigned char* deletedIP = new unsigned char[4];
+
+	ConvertStringToIP(strIP, deletedIP);
+	m_ARP->deleteProxyTable(deletedIP);
+
+	RefreshP();
+
+	UpdateData(FALSE);
 }
