@@ -216,6 +216,7 @@ BOOL Cipc2019Dlg::OnInitDialog()	// 로그인 다이얼로그 생성
 	m_PARPListView.InsertColumn(0, _T("Device"), LVCFMT_CENTER, 150);
 	m_PARPListView.InsertColumn(1, _T("IP Address"), LVCFMT_CENTER, 150);
 	m_PARPListView.InsertColumn(2, _T("Ethernet Address"), LVCFMT_CENTER, 150);
+	//m_PARPListView.InsertColumn(3, _T("Status"), LVCFMT_CENTER, 150);
 
 	// 테이블에서 한 행 전체 선택 가능하게 하기
 	m_ARPListView.SetExtendedStyle(LVS_EX_FULLROWSELECT);
@@ -508,6 +509,24 @@ unsigned char* Cipc2019Dlg::MacAddrToHexInt(CString ether)
 	return file_ether;
 }
 
+BOOL Cipc2019Dlg::ConvertHex(CString cs, unsigned char* hex)//change string to hex
+{
+	int i;
+	char* srcStr = cs.GetBuffer(0);
+
+	for (i = 0; i < 12; i++) {
+		// error
+		if (srcStr[i] < '0' || (srcStr[i] > '9' && srcStr[i] < 'a') || srcStr[i] > 'f')
+			return FALSE;
+	}
+	for (i = 0; i < 12; i = i + 2) {
+		hex[i / 2] = (((srcStr[i] > '9') ? (srcStr[i] - 87) : (srcStr[i] - '0')) << 4 |
+			((srcStr[i + 1] > '9') ? (srcStr[i + 1] - 87) : (srcStr[i + 1] - '0')));
+	}
+	return TRUE;
+}
+
+
 BOOL Cipc2019Dlg::ConvertStringToIP(CString cs, unsigned char* ip) //change string to hex
 {
 	int j = 0;
@@ -717,18 +736,22 @@ void Cipc2019Dlg::RefreshP()
 		else
 			macAddr.Format("00:00:00:00:00:00");
 
-		m_PARPListView.InsertItem(i, ipAddr);
-		m_PARPListView.SetItem(i, 1, LVIF_TEXT, macAddr, 0, 0, 0, NULL);
+		m_PARPListView.InsertItem(i, _T("Default Device"));
+		m_PARPListView.SetItem(i, 1, LVIF_TEXT, ipAddr, 0, 0, 0, NULL);
+		m_PARPListView.SetItem(i, 2, LVIF_TEXT, macAddr, 0, 0, 0, NULL);
+
+		/*
 		if (proxyElements[i].state == ARP_COMPLETE)
-			m_PARPListView.SetItem(i, 2, LVIF_TEXT, "COMPLETE", 0, 0, 0, NULL);
+			m_PARPListView.SetItem(i, 3, LVIF_TEXT, "COMPLETE", 0, 0, 0, NULL);
 		else
-			m_PARPListView.SetItem(i, 2, LVIF_TEXT, "INCOMPLETE", 0, 0, 0, NULL);
+			m_PARPListView.SetItem(i, 3, LVIF_TEXT, "INCOMPLETE", 0, 0, 0, NULL);
+		*/
 	}
 }
 
 
 
-BOOL Cipc2019Dlg::Receive(unsigned char* ppayload)
+BOOL Cipc2019Dlg::Receive(unsigned char* ppayload) // ARP Reply 받았을 때 Refresh() 함수 실행시키려고 만든 Receive()
 {
 	BOOL bSuccess = FALSE;
 
@@ -803,38 +826,50 @@ void Cipc2019Dlg::OnBnClickedGratuitousSend()
 void Cipc2019Dlg::OnBnClickedParpAddButton()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+
+	UpdateData(TRUE);
+
+	unsigned char _hexProxyMacAddr[6];
+	unsigned char _proxyIPAddr[4];
+
 	CProxyAddDlg dlg;
-	dlg.DoModal(); // Add 버튼을 누르면 Proxy Dlg 창 띄운다.
-	/*
+
 	if (dlg.DoModal() == IDOK)
 	{
-		unsigned char _hexProxyMacAddr[6];
-		unsigned char _proxyIPAddr[4];
+		//dlg.m_EtherAddr;
+		//AfxMessageBox(dlg.m_EtherAddr); 잘 가져옴
+		//dlg.m_IPAddr;
 
-		if (dlg.m_EtherAddr.GetLength() != 17)
-		{
-			MessageBox("MAC 주소 12자리를 입력해 주세요.");
-			return;
-		}
-
-		// Proxy Source Mac 주소 설정
-		unsigned char* tmp = MacAddrToHexInt(dlg.m_EtherAddr);
-		_hexProxyMacAddr[0] = tmp[0];
-		_hexProxyMacAddr[1] = tmp[1];
-		_hexProxyMacAddr[2] = tmp[2];
-		_hexProxyMacAddr[3] = tmp[3];
-		_hexProxyMacAddr[4] = tmp[4];
-		_hexProxyMacAddr[5] = tmp[5];
-
-		dlg.m_IPAddr.GetAddress(_proxyIPAddr[0], _proxyIPAddr[1], _proxyIPAddr[2], _proxyIPAddr[3]);
-
+		memcpy(_hexProxyMacAddr, dlg.Ether, 6);
+		memcpy(_proxyIPAddr, dlg.IP, 4);
 		m_ARP->insertProxyTable(_proxyIPAddr, _hexProxyMacAddr);
 		RefreshP();
-
-		UpdateData(FALSE);
-
-		Invalidate();
 	}
+
+	UpdateData(FALSE);
+
+	/*
+	UpdateData(TRUE);
+
+	unsigned char _hexProxyMacAddr[6];
+	unsigned char _proxyIPAddr[4];
+
+	if (m_proxyMacAddr.GetLength() != 12)
+	{
+		MessageBox("MAC 주소 12자리를 입력해 주세요.");
+		return;
+	}
+
+	ConvertHex(m_proxyMacAddr, _hexProxyMacAddr);	// CString change to Hex
+	m_proxyMacAddr.Format("");
+
+	m_proxyIPAddr.GetAddress(_proxyIPAddr[0], _proxyIPAddr[1], _proxyIPAddr[2], _proxyIPAddr[3]);
+	m_proxyIPAddr.ClearAddress();
+
+	m_ARP->insertProxyTable(_proxyIPAddr, _hexProxyMacAddr);
+	RefreshProxyTable();
+
+	UpdateData(FALSE);
 	*/
 }
 

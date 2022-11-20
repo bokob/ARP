@@ -1,19 +1,20 @@
 ﻿#pragma once
 #include "afxdialogex.h"
 
-class CProxyAddDlg : public CDialog
+
+// CProxyAddDlg 대화 상자
+
+class CProxyAddDlg : public CDialogEx
 {
 	DECLARE_DYNAMIC(CProxyAddDlg)
 
 public:
 	CProxyAddDlg(CWnd* pParent = nullptr);   // 표준 생성자입니다.
 	virtual ~CProxyAddDlg();
-	//virtual BOOL OnInitDialog();
-	
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_PROXY_ADD_DIALOG };
+	enum { IDD = IDD_PROXYADD_DIALOG };
 #endif
 
 protected:
@@ -21,23 +22,14 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-
-	struct SystemEtherInfo {
-		int InstallCardNo;
-		char CardName[MAX_ADAPTER_NAME_LENGTH + 4 + 22];;
-		char CardDesc[MAX_ADAPTER_DESCRIPTION_LENGTH + 4];
-		unsigned char MacAddr[6];
-		char IPAddr[16];
-	};		// 네트워크 장비 목록을 갖는 구조체
-
-	CNILayer* m_NI;
-	CLayerManager	m_LayerMgr;
-	CComboBox m_PAdapter;
-	afx_msg void OnIpnFieldchangedProxyIp(NMHDR* pNMHDR, LRESULT* pResult);
+	//virtual BOOL OnInitDialog();
+	afx_msg void OnBnClickedOk();
+	afx_msg void OnBnClickedCancel();
 	CIPAddressCtrl m_IPAddr;
 	CString m_EtherAddr;
-	afx_msg void OnCbnSelchangeProxyAdapter();
 
-protected:
-
+	unsigned char IP[4];
+	unsigned char Ether[10];
+	afx_msg void OnCbnSelchangePadapter();
+	CComboBox m_PAdapter;
 };

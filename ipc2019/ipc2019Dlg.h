@@ -6,10 +6,10 @@
 
 #include "LayerManager.h"	// Added by ClassView
 #include "IPLayer.h"
-//#include "ARPLayer.h"
 #include "EthernetLayer.h"	// Added by ClassView
 #include "NILayer.h"
 #include "ARPLayer.h"
+#include "ProxyAddDlg.h"
 
 // Cipc2019Dlg 대화 상자
 class Cipc2019Dlg : public CDialogEx, public CBaseLayer
@@ -150,4 +150,6 @@ public:
 	CString m_strGratuitousAddr;
 	afx_msg void OnBnClickedParpAddButton();
 	afx_msg void OnBnClickedParpDeleteButton();
+
+	CProxyAddDlg* PDlg = NULL;
 };
