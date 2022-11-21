@@ -22,7 +22,8 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-	//virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
+	void SetDlgState();
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCancel();
 	CIPAddressCtrl m_IPAddr;

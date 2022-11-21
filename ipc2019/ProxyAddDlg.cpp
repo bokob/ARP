@@ -41,6 +41,57 @@ END_MESSAGE_MAP()
 // CProxyAddDlg 메시지 처리기
 
 
+BOOL CProxyAddDlg::OnInitDialog()
+{
+
+	CDialogEx::OnInitDialog();	// 로그인 다이얼롤그 생성
+
+	// 시스템 메뉴에 "정보..." 메뉴 항목을 추가합니다.
+
+	// IDM_ABOUTBOX는 시스템 명령 범위에 있어야 합니다.
+	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
+	ASSERT(IDM_ABOUTBOX < 0xF000);
+
+	CMenu* pSysMenu = GetSystemMenu(FALSE);
+	if (pSysMenu != nullptr)
+	{
+		BOOL bNameValid;
+		CString strAboutMenu;
+		bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
+		ASSERT(bNameValid);
+		if (!strAboutMenu.IsEmpty())
+		{
+			pSysMenu->AppendMenu(MF_SEPARATOR);
+			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
+		}
+	}
+
+	//추가 초기화 작업
+	SetDlgState();
+
+	m_PAdapter.AddString(_T("Default Device"));
+	//p_EtherComboBox->AddString(_T("Default Device"));
+	m_PAdapter.SetCurSel(0);
+
+	return TRUE;
+}
+
+void CProxyAddDlg::SetDlgState()	// 영역별 들어갈 내용
+{
+	UpdateData(TRUE);
+
+	CComboBox* pComboBox = (CComboBox*)GetDlgItem(IDC_PADAPTER);
+
+	pComboBox->EnableWindow(TRUE);
+
+	UpdateData(FALSE);
+}
+
+
+
+
+
+
 void CProxyAddDlg::OnBnClickedOk()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
@@ -68,12 +119,12 @@ void CProxyAddDlg::OnBnClickedOk()
 	}
 	if (m_EtherAddr.IsEmpty() || m_IPAddr.IsBlank())
 	{
-		AfxMessageBox("입력되지 않은 항목이 있습니다.");
+		AfxMessageBox("입력되지 않은 항목이 있음.");
 		return;
 	}
 	else if (isRight == false)
 	{
-		AfxMessageBox("주소형식이 올바르지 않습니다.( FORMAT : xx:xx:xx:xx:xx:xx )");
+		AfxMessageBox("주소형식 이렇게 입력하셈( xx:xx:xx:xx:xx:xx )");
 		return;
 	}
 
@@ -106,20 +157,11 @@ void CProxyAddDlg::OnCbnSelchangePadapter()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 
+	m_PAdapter.AddString(_T("Default Device"));
+
 	//CComboBox* p_EtherComboBox = (CComboBox*)GetDlgItem(IDC_PADAPTER);
 	//device_description.Trim();
 	//m_PAdapter.AddString(_T("Default Device"));
 	//p_EtherComboBox->AddString(_T("Default Device"));
 	//m_PAdapter.SetCurSel(0);
 }
-
-/*
-BOOL CProxyAddDlg::OnInitDialog()
-{
-	m_PAdapter.AddString(_T("Default Device"));
-	//p_EtherComboBox->AddString(_T("Default Device"));
-	m_PAdapter.SetCurSel(0);
-
-	return TRUE;
-}
-*/

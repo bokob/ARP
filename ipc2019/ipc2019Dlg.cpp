@@ -836,6 +836,9 @@ void Cipc2019Dlg::OnBnClickedParpAddButton()
 
 	if (dlg.DoModal() == IDOK)
 	{
+
+		//dlg.m_PAdapter.AddString("Default Device");
+
 		//dlg.m_EtherAddr;
 		//AfxMessageBox(dlg.m_EtherAddr); 잘 가져옴
 		//dlg.m_IPAddr;
