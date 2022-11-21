@@ -271,6 +271,18 @@ bool CARPLayer::deleteProxyTable(unsigned char* proxyIPAddr)
 	return true;
 }
 
+bool CARPLayer::deleteOneARPTable(unsigned char* arpIPAddr)
+{
+	ARPElement* proxyElement = new ARPElement;
+
+	int ip;
+	memcpy(&ip, arpIPAddr, 4);
+
+	ARPTable.RemoveKey(ip);
+
+	return true;
+}
+
 ARPElement* CARPLayer::getProxyElements(char*** keyIPs, int* tableSize)
 {
 	ARPElement* proxyElements = (ARPElement*)malloc(sizeof(ARPElement) * ProxyTable.GetCount());

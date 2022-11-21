@@ -15,5 +15,6 @@
 #include "ARPLayer.h"
 #include "EthernetLayer.h"
 #include "NILayer.h"
+#include "ProxyAddDlg.h"
 
 #endif //PCH_H

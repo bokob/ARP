@@ -6,10 +6,10 @@
 
 #include "LayerManager.h"	// Added by ClassView
 #include "IPLayer.h"
-//#include "ARPLayer.h"
 #include "EthernetLayer.h"	// Added by ClassView
 #include "NILayer.h"
 #include "ARPLayer.h"
+#include "ProxyAddDlg.h"
 
 // Cipc2019Dlg 대화 상자
 class Cipc2019Dlg : public CDialogEx, public CBaseLayer
@@ -57,8 +57,10 @@ public:
 	//inline void		SendData();		// ChatAppLayer로 메시지 전송
 	inline void		SendARP(unsigned char* destIP);
 	unsigned char*  MacAddrToHexInt(CString ether);
+	BOOL            ConvertStringToIP(CString cs, unsigned char* ip);
 	BOOL			ConvertHex(CString cs, unsigned char* hex);
 	void			Refresh();
+	void			RefreshP();
 
 	typedef struct _ARP_BODY // 28바이트
 	{
@@ -144,4 +146,10 @@ public:
 	afx_msg void OnBnClickedArpItemDeleteButton();
 	afx_msg void OnBnClickedButtonSend();
 	CIPAddressCtrl m_IPDstAddr;
+	afx_msg void OnBnClickedGratuitousSend();
+	CString m_strGratuitousAddr;
+	afx_msg void OnBnClickedParpAddButton();
+	afx_msg void OnBnClickedParpDeleteButton();
+
+	CProxyAddDlg* PDlg = NULL;
 };
